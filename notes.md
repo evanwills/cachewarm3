@@ -36,11 +36,11 @@ Inserting URLs into the DB
 
 2.	new URLs:
 
-	1.	get headers for both HTTPS and HTTP versions of the URL
+	1.	get headers for both `HTTPS` and `HTTP` versions of the URL
 
 	2.	insert URL and cache expiry time into URLs table
 
-3	old URLs:
+3.	old URLs:
 
 	1	get headers to see if Page is still available
 
@@ -54,7 +54,7 @@ Get entries for X number of URLs who's cache has expired.
 
 If there are any URLs with cold cache
 
-1.	download page and headers for either HTTP or HTTPS or HTTPS & HTTP
+1.	download page and headers for either `HTTP` or `HTTPS` or `HTTPS & HTTP`
 
 2.	update cache expiry times.
 
