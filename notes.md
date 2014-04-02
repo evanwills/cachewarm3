@@ -6,7 +6,7 @@ DB:
 
 The database would only need two tables:
 
-###*URLs* table
+### *URLs* table
 
 Store the URL string, cache expiry times and which protocol(s) the URL can use
 
@@ -18,7 +18,7 @@ Store the URL string, cache expiry times and which protocol(s) the URL can use
 	url_HTTPS	tinyint(1) default 0
 
 
-###*place* table
+### *place* table
 
 stores (if necessary) which ID was last checked
 
