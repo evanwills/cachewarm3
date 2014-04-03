@@ -1,10 +1,10 @@
 <?php
 
 
-class curl_get_cache extends curl_get_url
+class curl_get_cache extends curl_get_url_simple
 {
-	$gmt_offset = 0;
-	$httpobject = null;
+//	protected $gmt_offset = 0;
+	protected $httpobject = null;
 
 /**
  * @method __construct() sets up all the details for a cURL connectin
@@ -26,14 +26,14 @@ class curl_get_cache extends curl_get_url
  * @return object curl_get_url for easily getting content from an
  *	   external website.
  */
-	public function __construct( $cookie = true , $login_stuff = array() , $proxy = array() , $httpauth = array() )
+	public function __construct( $cookie = true , $proxy = array() , $httpauth = array() )
 	{
-		parent::__construct( $cookie , $login_stuff , $proxy , $httpauth );
+		parent::__construct( $cookie , $proxy , $httpauth );
 
 		$this->httpobject = new HTTPobject( '' , true );
 
-		$serverOffset = new DateTime( 'now' , new DateTimeZone( date_default_timezone_get() ) );
-		$this->gmt_offset = $serverOffset->getOffset();
+//		$serverOffset = new DateTime( 'now' , new DateTimeZone( date_default_timezone_get() ) );
+//		$this->gmt_offset = $serverOffset->getOffset();
 	}
 
 	public function check_url( $url , $no_body = true )
@@ -52,17 +52,21 @@ class curl_get_cache extends curl_get_url
 			$no_body = true;
 		}
 		$output = array(
-			 'is_valid' => false
-			,'is_cached' => false
-			,'expiry' => null
-		)
-		$headers = $this->httpobject( $this->get_content($url,'',$no_body,true) );
-		if( $headers->successfull_download() === true )
+			 'is_valid' => 0
+			,'is_cached' => 0
+			,'expires' => null
+			,'date' => ''
+		);
+		$this->httpobject->extract_headers( $this->get_content($url,'',$no_body,true) );
+		$output['date-raw'] = $this->httpobject->get_header('date-raw');debug($this->httpobject->get_headers_array());
+		$output['expires-raw'] = $this->httpobject->get_header('expires-raw');debug($this->httpobject->get_headers_array());
+		if( $this->httpobject->successful_download() === true )
 		{
-			if( $headers->is_cached() === true )
+			$output['is_valid'] = 1;
+			if( $this->httpobject->is_cached() === true )
 			{
-				$output['is_cached'] = true;
-				$output['expiry'] = $headers->get_header('expiry-raw') + $this->gmt_offset();
+				$output['is_cached'] = 1;
+				$output['expires'] = $this->httpobject->get_header('expires');
 			}
 		}
 		$this->httpobject->reset_http();
@@ -91,14 +95,14 @@ class curl_get_cache extends curl_get_url
 			$https = substr_replace( $url , 'https' , 0 , 4 );
 		}
 		return array(
-			 'http' => $this->check_url($http);
-			,'https' => $this->check_url($https);
+			 'http' => $this->check_url($http)
+			,'https' => $this->check_url($https)
 			,'raw_url' => substr_replace( $http , '' , 0 , 7 )
 		);
 	}
 
 	public function warm_url( $url )
 	{
-		return $this->check_url( $url , false )
+		return $this->check_url( $url , false );
 	}
 }
