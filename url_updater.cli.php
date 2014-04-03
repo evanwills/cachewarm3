@@ -59,30 +59,75 @@ if(!function_exists('debug'))
 // END: debug include
 // ==================================================================
 
-require_once($cls.'curl_get/curl_get.class.php');
+require_once($cls.'curl_get/curl_get_simple.class.php');
+require_once($cls.'db_class/db_abstract.class.php');
+require_once($cls.'db_class/db_mysql.class.php');
 require_once('classes/curl_get_cache.class.php');
+require_once('config_db.php');
 
 $source_list = 'http://www.acu.edu.au/admin/warm_up/list_all/';
-#$source_list = 'http://www.acu.edu.au/admin/warm_up/list_all/_nocache';
+// $source_list = 'http://www.acu.edu.au/admin/warm_up/list_all/_nocache';
 
+$db = new db_mysql( array( 'host' => $host , 'username' => $db_user , 'password' => $db_pass , 'database' => $db_name ) );
 
 
 $serverOffset = new DateTime( 'now' , new DateTimeZone( date_default_timezone_get() ) );
 $GMT_offset = $serverOffset->getOffset();
 unset($serverOffset);
 
-exit;
 $curl = new curl_get_cache();
 debug( round( ( memory_get_usage() / 1024 ) / 1024 ,3 ));
-$url_list = explode("\n",$curl->get_content($source_list)); debug( $url_list , round( ( memory_get_usage() / 1024 ) / 1024 , 3 ));
+$url_list = explode("\n",$curl->get_content($source_list)); debug( round( ( memory_get_usage() / 1024 ) / 1024 , 3 ));sleep(3);
 
 for( $a = 0 ; $a < count($url_list) ; $a += 1 )
 {
 	$url_list[$a] = trim($url_list[$a]);
 	if( strlen($url_list[$a]) > 11 )
 	{
-		$results = $curl->check_url_both($url_list[$a]);
-
+		$downloaded = $curl->check_url_both($url_list[$a]);
+		$e_lru = $db->escape(strrev($downloaded['raw_url']));
+		$e_lr = $db->escape(substr(strrev($downloaded['raw_url']),0,2));
+		$sql = 'SELECT `url_id` FROM `urls` WHERE `url_url_sub` = "'.$e_lr.'" AND `url_url` = "'.$e_lru.'"';
+		$result = $db->fetch_1($sql);
+		if( $result === null )
+		{
+			$sql = '
+INSERT INTO `urls`
+(
+	 `url_url`
+	,`url_url_sub`
+	,`url_http_ok`
+	,`url_http_cached`
+	,`url_http_cache_expires`
+	,`url_https_ok`
+	,`url_https_cached`
+	,`url_https_cache_expires`
+)
+VALUES
+(
+	 "'.$e_lru.'"
+	,"'.$e_lr.'"
+	,'.$downloaded['http']['is_valid'].'
+	,'.$downloaded['http']['is_cached'].'
+	,"'.$db->escape(date('Y-m-d H:i:s',$downloaded['http']['expires'])).'"
+	,'.$downloaded['https']['is_valid'].'
+	,'.$downloaded['https']['is_cached'].'
+	,"'.$db->escape(date('Y-m-d H:i:s',$downloaded['https']['expires'])).'"
+)';
+		}
+		else
+		{
+			$sql = '
+UPDATE `urls`
+SET	 `url_http_ok` = '.$downloaded['http']['is_valid'].'
+	,`url_http_cached` = '.$downloaded['http']['is_cached'].'
+	,`url_http_cache_expires` = "'.$db->escape(date('Y-m-d H:i:s',$downloaded['http']['expires'])).'"
+	,`url_https_ok` = '.$downloaded['https']['is_valid'].'
+	,`url_https_cached`= '.$downloaded['https']['is_cached'].'
+	,`url_https_cache_expires` = "'.$db->escape(date('Y-m-d H:i:s',$downloaded['https']['expires'])).'"
+WHERE	`url_id` = '.$result;
+		}
+		$db->query($sql);
 	}
 	debug( round(( memory_get_usage() / 1024 ) / 1024 , 3 ));
 }
