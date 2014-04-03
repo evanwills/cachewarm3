@@ -58,8 +58,8 @@ class curl_get_cache extends curl_get_url_simple
 			,'date' => ''
 		);
 		$this->httpobject->extract_headers( $this->get_content($url,'',$no_body,true) );
-		$output['date-raw'] = $this->httpobject->get_header('date-raw');debug($this->httpobject->get_headers_array());
-		$output['expires-raw'] = $this->httpobject->get_header('expires-raw');debug($this->httpobject->get_headers_array());
+//		$output['date-raw'] = $this->httpobject->get_header('date-raw');
+//		$output['expires-raw'] = $this->httpobject->get_header('expires-raw');
 		if( $this->httpobject->successful_download() === true )
 		{
 			$output['is_valid'] = 1;
