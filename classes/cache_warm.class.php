@@ -4,11 +4,10 @@ class cache_warm
 {
 	private $db = null;
 	private $curl = null;
-	private $cache_local = false;;
 	private $GMT_offset = 0;
 
 
-	public function __construct( right_db $db , curl_get_cache $curl , cache_downloaded_default $cache_local = null )
+	public function __construct( right_db $db , curl_get_cache $curl )
 	{
 		$this->db = $db;
 		$this->curl = $curl;
@@ -284,14 +283,14 @@ LIMIT '.$start.',100
 		}
 		if( $url_info['https'] === true )
 		{
-			$https = $curl->warm_url( 'https://'.$url_info['url'] , false );
+			$https = $curl->check_url( 'https://'.$url_info['url'] , false );
 			$sql	.= "\t$sep`url_http` = {$https['is_valid']}\n\t,`url_http_is_cached` = {$https['is_cached']}\n\t,`url_http_cache_expires` = '"
 				.$this->db->escape(date('Y-m-d H:i:s',$https['expires']))."'";
 			$sep = ',';
 		}
 		if( $url_info['http'] === true )
 		{
-			$http = $curl->warm_url( 'http://'.$url_info['url'] , false );
+			$http = $curl->check_url( 'http://'.$url_info['url'] , false );
 			$sql	.= "\t$sep`url_http` = {$http['is_valid']}\n\t,`url_http_is_cached` = {$http['is_cached']}\n\t,`url_http_cache_expires` = '"
 				.$this->db->escape(date('Y-m-d H:i:s',$http['expires']))."'";
 			$sep = ',';
