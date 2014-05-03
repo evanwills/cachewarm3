@@ -1,21 +1,23 @@
-How cachewarm3 should work
-==========================
+# How cachewarm3 should work
 
-DB:
----
+## DB:
 
 The database would only need two tables:
 
 ### *URLs* table
 
-Store the URL string, cache expiry times and which protocol(s) the URL can use
+Store the URL string, cache expiry times and which protocol(s) the
+URL can use
 
-	url_id	mediumint(6) primary
-	url_url	text
-	url_HTTP_cache_expirey_date	datetime NULL
-	url_HTTPS_cache_expirey_date	datetime NULL
-	url_HTTP	tinyint(1) default 1
-	url_HTTPS	tinyint(1) default 0
+	url_id			mediumint(6) primary
+	url_url			text
+	url_url_sub 		CHAR(2)
+	url_HTTP_ok		tinyint(1) default 1
+	url_HTTP_is_cache	datetime NULL
+	url_HTTP_cache_expires	datetime NULL
+	url_HTTPS_ok		tinyint(1) default 0
+	url_HTTPS_is_cache	datetime NULL
+	url_HTTPS_cache_expires	datetime NULL
 
 
 ### *place* table
@@ -25,10 +27,12 @@ stores (if necessary) which ID was last checked
 	place_name	varchar(32) NOT NULL unique
 	place_url_id	mediumint(6)
 
+When using the URLs list as a source for URLs to be searched it is
+useful to be able to kill the processes after a given amount of time
+to minimise memory leakage.
 
 
-Inserting URLs into the DB
---------------------------
+## Inserting URLs into the DB
 
 (run daily)
 
@@ -47,10 +51,9 @@ Inserting URLs into the DB
 	2	delete entries for URLs where pages are no longer available
 
 
-Warming cache
--------------
+## Warming cache
 
-Get entries for X number of URLs who's cache has expired.
+Get entries for X number of URLs who is cache has expired.
 
 If there are any URLs with cold cache
 
@@ -65,7 +68,7 @@ If there are no URLs with cold cache
 2.	sleep until then.
 
 
-Other applications
-------------------
+## Other applications
 
-With the above DB structure we can use the URLs for things like the full text search of matrix pages.
+With the above DB structure we can use the URLs for things like the full text search of web pages.
+
