@@ -204,31 +204,98 @@ LIMIT 0,1
 		}
 	}
 
+	public function get_uncached_urls($start = 0 )
+	{
+		if( !is_int($start) || $start < 100 )
+		{
+			$start = 0;
+		}
+
+		
+		$sql = '
+SELECT 	COUNT(*) as `total`
+FROM	`urls`
+WHERE
+(
+		`url_http_ok` = 1
+	AND	`url_http_is_cached` = 0
+	AND	`url_https_ok` = 1
+	AND	`url_https_is_cached` = 0
+)
+OR
+(
+		`url_http_ok` = 1
+	AND	`url_http_is_cached` = 0
+	AND	`url_https_ok` = 0
+)
+OR
+(
+		`url_http_ok` = 0
+	AND	`url_https_ok` = 1
+	AND	`url_https_is_cached` = 0
+)';
+		
+		$total = $this->db->fetch_1($sql);
+		if( $total > 0 )
+		{
+
+			$sql = '
+SELECT 	 REVERSE(`url_url`) AS `url`
+	,`url_http_ok` AS `http`
+	,`url_https_ok` AS `https`
+FROM	`urls`
+WHERE
+(
+		`url_http_ok` = 1
+	AND	`url_http_is_cached` = 0
+	AND	`url_https_ok` = 1
+	AND	`url_https_is_cached` = 0
+)
+OR
+(
+		`url_http_ok` = 1
+	AND	`url_http_is_cached` = 0
+	AND	`url_https_ok` = 0
+)
+OR
+(
+		`url_http_ok` = 0
+	AND	`url_https_ok` = 1
+	AND	`url_https_is_cached` = 0
+)
+LIMIT '.$start.',100
+';
+			$output = $this->db->_fetch($sql);
+	
+			if( $output !== null )
+			{
+				$output['total'] = $total;
+				return $output;
+			}
+		}
+		return false;
+	}
+
 	public function warm_url( $url_info )
 	{
 		if( !is_array($url_info) || !isset($url_info['url']) || !isset($url_info['sub']) || !isset($url_info['http']) || !isset($url_info['https']) )
 		{
 			// throw
 		}
-		$headers_only = !$this->cache_locally;
-		if( $url_info['http'] === true )
-		{
-			$http = $curl->warm_url( 'http://'.$url_info['url'] , $headers_only );
-			$sql	.= "\t$sep`url_http` = {$http['is_valid']}\n\t,`url_http_is_cached` = {$http['is_cached']}\n\t,`url_http_cache_expires` = '"
-				.$this->db->escape(date('Y-m-d H:i:s',$http['expires']))."'";
-			$sep = ',';
-			if( $http['is_valid'] )
-			{
-				$headers_only = true;
-			}
-			unset($http);
-		}
 		if( $url_info['https'] === true )
 		{
-			$https = $curl->warm_url( 'https://'.$url_info['url'] , $headers_only );
+			$https = $curl->warm_url( 'https://'.$url_info['url'] , false );
+			$sql	.= "\t$sep`url_http` = {$https['is_valid']}\n\t,`url_http_is_cached` = {$https['is_cached']}\n\t,`url_http_cache_expires` = '"
+				.$this->db->escape(date('Y-m-d H:i:s',$https['expires']))."'";
+			$sep = ',';
+		}
+		if( $url_info['http'] === true )
+		{
+			$http = $curl->warm_url( 'http://'.$url_info['url'] , false );
 			$sql	.= "\t$sep`url_http` = {$http['is_valid']}\n\t,`url_http_is_cached` = {$http['is_cached']}\n\t,`url_http_cache_expires` = '"
 				.$this->db->escape(date('Y-m-d H:i:s',$http['expires']))."'";
 			$sep = ',';
+			unset($http);
 		}
 		if( $sql != '' )
 		{
