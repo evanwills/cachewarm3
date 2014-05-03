@@ -4,7 +4,9 @@
 class curl_get_cache extends curl_get_url_simple
 {
 //	protected $gmt_offset = 0;
-	protected $httpobject = null;
+	public $httpobject = null;
+	private $save_locally = null;
+
 
 /**
  * @method __construct() sets up all the details for a cURL connectin
@@ -31,33 +33,52 @@ class curl_get_cache extends curl_get_url_simple
 		parent::__construct( $cookie , $proxy , $httpauth );
 
 		$this->httpobject = new HTTPobject( '' , true );
+		$this->save_locally = new cache_downloaded($this);
 
 //		$serverOffset = new DateTime( 'now' , new DateTimeZone( date_default_timezone_get() ) );
 //		$this->gmt_offset = $serverOffset->getOffset();
 	}
 
-	public function check_url( $url , $no_body = true )
+/**
+ * @method check_url() tries to pull a given URL from a website thus
+ *	   causing the URL to be cached if it isn't already.
+ *
+ * @param string $url the URL to be downloaded
+ *
+ * @param boolean $headers_only whether or not to only retrieve the
+ *	  page headers, rather than the whole page
+ *
+ * @return array associative with whether or not the page was
+ *	   available, if it was cached and when the cache next expires
+ */
+	public function check_url( $url , $headers_only = true )
 	{
 		if( !is_string($url) )
 		{
 			// throw
 		}
 		$url = trim($url);
-		if( strlen($url) < 11 ||  ( substr($url,0,7) != 'http://' && substr($url,0,8) != 'https://' ) )
+		if( !$this->valid_url($url) )
 		{
 			// throw
 		}
-		if( $no_body !== false )
+		if( $headers_only !== false )
 		{
-			$no_body = true;
+			$headers_only = true;
 		}
+		else
+		{
+			$headers_only = false;
+		}
+
 		$output = array(
 			 'is_valid' => 0
 			,'is_cached' => 0
 			,'expires' => null
 			,'date' => ''
 		);
-		$this->httpobject->extract_headers( $this->get_content($url,'',$no_body,true) );
+		$this->httpobject->reset_http();
+		$this->httpobject->extract_headers( $this->get_content($url,$headers_only,true) );
 //		$output['date-raw'] = $this->httpobject->get_header('date-raw');
 //		$output['expires-raw'] = $this->httpobject->get_header('expires-raw');
 		if( $this->httpobject->successful_download() === true )
@@ -67,6 +88,10 @@ class curl_get_cache extends curl_get_url_simple
 			{
 				$output['is_cached'] = 1;
 				$output['expires'] = $this->httpobject->get_header('expires');
+			}
+			if( $headers_only === false )
+			{
+				$this->save_locally->write_to_file_system($url,$httpobject);
 			}
 		}
 		$this->httpobject->reset_http();
@@ -80,14 +105,15 @@ class curl_get_cache extends curl_get_url_simple
 			// throw
 		}
 		$url = trim($url);
-		if( strlen($url) < 11 || substr($url,0,4) != 'http' )
+		if( !$this->valid_url($url) )
 		{
 			// throw
 		}
-		if( substr($url,0,8) == 'https://' )
+		$url_ = strtolower($url);
+		if( substr($url_,0,8) == 'https://' )
 		{
-			$https = $url;
 			$http = substr_replace( $url , 'http' , 0 , 5 );
+			$https = $url;
 		}
 		else
 		{
@@ -104,5 +130,10 @@ class curl_get_cache extends curl_get_url_simple
 	public function warm_url( $url )
 	{
 		return $this->check_url( $url , false );
+	}
+
+	public function set_save_locally( cache_downloaded $save_local )
+	{
+		$this->save_locally = $save_local;
 	}
 }
