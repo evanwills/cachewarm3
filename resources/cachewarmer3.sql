@@ -44,20 +44,48 @@ CREATE TABLE IF NOT EXISTS `urls` (
   `url_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `url_url` text NOT NULL COMMENT 'String reversed URL with http(s):// removed',
   `url_url_sub` CHAR(2) NOT NULL COMMENT 'Last two chars of the URL',
-  `url_http_ok` tinyint(1) unsigned DEFAULT NULL COMMENT 'Whether or not the URL works for plain HTTP',
-  `url_http_is_cached` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Whether or not the HTTP url is cached',
-  `url_http_cache_expires` datetime DEFAULT NULL COMMENT 'Cache expiry time for HTTP URL',
-  `url_https_ok` tinyint(1) unsigned DEFAULT NULL COMMENT 'Whether or not the URL works for HTTPS',
-  `url_https_is_cached` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Whether or not the HTTPS url is cached',
-  `url_https_cache_expires` datetime DEFAULT NULL COMMENT 'Cache expiry time for HTTPS URL',
+  `url__url_status_id` tinyint(3) unsigned NOT NULL DEFAULT 1 COMMENT 'Foreign key to the url_status table. The status of the URL',
   PRIMARY KEY			(`url_id`),
   KEY `IND_url_sub`		(`url_url_sub`),
-  KEY `IND_url_http`		(`url_http`),
-  KEY `IND_url_http_is_cached`	(`url_http_is_cached`),
-  KEY `IND_url_https`		(`url_https`),
-  KEY `IND_url_https_is_cached`	(`url_https_is_cached`),
-  KEY `IND__url_http__url_http_is_cached`	(`url_http`,`url_http_is_cached`)
-  KEY `IND__url_https__url_https_is_cached`	(`url_https`,`url_https_is_cached`),
+  KEY `IND_url_delete`		(`url_delete`),
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `urls`
+--
+
+DROP TABLE IF EXISTS `_url_status`;
+CREATE TABLE IF NOT EXISTS `_url_status` (
+  `url_status_id` tinyint(3) unsigned NOT NULL AUTO_INCREMENT,
+  `url_status_name` varchar(8) NOT NULL COMMENT 'The status of the URL (e.g. "new", "good", "delete")',
+  PRIMARY KEY				(`url_status_id`),
+  UNIQUE KEY `IND_url_status_name`	(`url_status_name`),
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `urls`
+--
+
+DROP TABLE IF EXISTS `protocol`;
+CREATE TABLE IF NOT EXISTS `protocol` (
+  `protocol__url_id` int(10) unsigned NOT NULL COMMENT 'Foreign key to the urls table. The unique ID of the URL',
+  `protocol_https` tinyint(1) unsigned DEFAULT NULL COMMENT 'Whether or not this relates to a HTTPS version of a URL',
+  `protocol_ok` tinyint(1) unsigned DEFAULT NULL COMMENT 'Whether or not the URL works for this protocol',
+  `protocol_is_cached` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Whether or not the URL for this protocol is cached',
+  `protocol_cache_expires` datetime DEFAULT NULL COMMENT 'Cache expiry time for the URL for this protocol',
+  PRIMARY KEY					(`protocol_id`),
+  UNIQUE KEY `UNI_protocol_url_id__protocol_https` (`protocol__url_id`,`protocol_https`),
+  KEY `IND_protocol_https`			(`protocol_https`),
+  KEY `IND_protocol_ok`				(`protocol_ok`),
+  KEY `IND_protocol_is_cached`			(`protocol_is_cached`),
+  KEY `IND__protocol_https__protocol_ok`	(`protocol_https`,`protocol_ok`)
+  KEY `IND__protocol_https__protocol_is_cached`	(`protocol_https`,`protocol_is_cached`)
+  KEY `IND__protocol_ok__protocol_is_cached`	(`protocol_ok`,`protocol_is_cached`)
+  KEY `IND__protocol_https__protocol_ok__protocol__is_cached`	(`protocol_https`,`protocol_ok`,`protocol_https_is_cached`),
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
