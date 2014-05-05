@@ -23,19 +23,6 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `places`
---
-
-DROP TABLE IF EXISTS `places`;
-CREATE TABLE IF NOT EXISTS `places` (
-  `place_name` varchar(32) NOT NULL COMMENT 'Name of the search using the URLs list',
-  `place__url_id` int(10) unsigned NOT NULL COMMENT 'ID of the last URL checked',
-  UNIQUE KEY `place_name` (`place_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `urls`
 --
 
@@ -48,7 +35,7 @@ CREATE TABLE IF NOT EXISTS `urls` (
   PRIMARY KEY			(`url_id`),
   KEY `IND_url_sub`		(`url_url_sub`),
   KEY `IND_url_delete`		(`url_delete`),
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Stores unique URLs';
 
 -- --------------------------------------------------------
 
@@ -62,8 +49,10 @@ CREATE TABLE IF NOT EXISTS `_url_status` (
   `url_status_name` varchar(8) NOT NULL COMMENT 'The status of the URL (e.g. "new", "good", "delete")',
   PRIMARY KEY				(`url_status_id`),
   UNIQUE KEY `IND_url_status_name`	(`url_status_name`),
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Normalised table for URL statuses';
 
+INSERT INTO `cachewarmer3`.`url_status` ( `status_id` , `status_name` )
+VALUES ( 1 , 'new' ) , ( 2 , 'good' ) , ( 3 , 'stale') , ( 4 , 'delete');
 -- --------------------------------------------------------
 
 --
@@ -86,7 +75,7 @@ CREATE TABLE IF NOT EXISTS `protocol` (
   KEY `IND__protocol_https__protocol_is_cached`	(`protocol_https`,`protocol_is_cached`)
   KEY `IND__protocol_ok__protocol_is_cached`	(`protocol_ok`,`protocol_is_cached`)
   KEY `IND__protocol_https__protocol_ok__protocol__is_cached`	(`protocol_https`,`protocol_ok`,`protocol_https_is_cached`),
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Contains all the data relating to the URL via a given protocl';
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
