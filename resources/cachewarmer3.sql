@@ -62,8 +62,8 @@ VALUES ( 1 , 'new' ) , ( 2 , 'good' ) , ( 3 , 'stale') , ( 4 , 'delete');
 DROP TABLE IF EXISTS `protocol`;
 CREATE TABLE IF NOT EXISTS `protocol` (
   `protocol__url_id` int(10) unsigned NOT NULL COMMENT 'Foreign key to the urls table. The unique ID of the URL',
-  `protocol_https` tinyint(1) unsigned DEFAULT NULL COMMENT 'Whether or not this relates to a HTTPS version of a URL',
-  `protocol_ok` tinyint(1) unsigned DEFAULT NULL COMMENT 'Whether or not the URL works for this protocol',
+  `protocol_https` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Whether or not this relates to a HTTPS version of a URL',
+  `protocol_ok` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Whether or not the URL works for this protocol',
   `protocol_is_cached` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Whether or not the URL for this protocol is cached',
   `protocol_cache_expires` datetime DEFAULT NULL COMMENT 'Cache expiry time for the URL for this protocol',
   PRIMARY KEY					(`protocol_id`),
