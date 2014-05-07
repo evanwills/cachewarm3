@@ -8,4 +8,5 @@ $curl = new curl_get_cache();
 $warmer = new cache_warm( $db , $curl );
 
 // $source_list comes from bootstrap.inc.php > config.php
-$warmer->update_url_list($source_list);
+//$warmer->update_url_list($source_list);
+$warmer->check_new_urls();
