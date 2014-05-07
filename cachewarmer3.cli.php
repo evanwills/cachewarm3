@@ -15,11 +15,11 @@ if( $_SERVER['argc'] > 1 && $_SERVER['argv'][1] == 'cache_local' && isset($local
 }
 
 
-$mem = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );
+$memory_used = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );
 
-while( $mem < 50 )
+while( $memory_used < $memory_limit )
 {
-	$urls_list = get_urls_to_warm();
+	$urls_list = $warm->get_urls_to_warm();
 	if( $urls_list === false )
 	{
 		exit;
@@ -32,15 +32,15 @@ while( $mem < 50 )
 	{
 		for( $a = 0 ; $a < count($urls_list) ; $a += 1 )
 		{
-			if( $mem > 50 )
+			if( $memory_used > $memory_limit )
 			{
 				exit;
 			}
 			$warm->warm_url( $result[$a] );
-			$mem = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );
+			$memory_used = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );
 		}
 	}
-	$mem = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );
+	$memory_used = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );
 }
 
 
