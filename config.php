@@ -13,3 +13,9 @@ $source_list = 'http://www.acu.edu.au/admin/warm_up/list_all/';
  */
 $local_cache_path = '';
 
+
+/**
+ * @var integer $memory_limit the number of Mega Bytes the script can
+ *	use before it should exit.
+ */
+$memory_limit = 50;
