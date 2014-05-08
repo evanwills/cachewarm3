@@ -33,7 +33,8 @@ class curl_get_cache extends curl_get_url_simple
 		parent::__construct( $cookie , $proxy , $httpauth );
 
 		$this->httpobject = new HTTPobject( '' , true );
-		$this->save_locally = new cache_downloaded($this);
+
+		$this->save_locally = new cache_downloaded($this,'');
 
 //		$serverOffset = new DateTime( 'now' , new DateTimeZone( date_default_timezone_get() ) );
 //		$this->gmt_offset = $serverOffset->getOffset();
@@ -75,7 +76,7 @@ class curl_get_cache extends curl_get_url_simple
 			 'is_valid' => 0
 			,'is_cached' => 0
 			,'expires' => null
-			,'date' => ''
+			,'date' => null
 		);
 		$this->httpobject->reset_http();
 		$this->httpobject->extract_headers( $this->get_content($url,$headers_only,true) );
@@ -88,13 +89,13 @@ class curl_get_cache extends curl_get_url_simple
 			{
 				$output['is_cached'] = 1;
 				$output['expires'] = $this->httpobject->get_header('expires');
+				$output['date'] = date('Y-m-d H:i:s',$output['expires']);
 			}
 			if( $headers_only === false )
 			{
-				$this->save_locally->write_to_file_system($url,$httpobject);
+				$this->save_locally->write_to_file_system($url,$this->httpobject);
 			}
 		}
-		$this->httpobject->reset_http();
 		return $output;
 	}
 
