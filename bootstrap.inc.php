@@ -1,10 +1,12 @@
 <?php
 
+$pwd = dirname(__FILE__).'/';
+
 // config.default.php sets the default config values.
-require_once('config.default.php');
+require_once($pwd.'config.default.php');
 
 // config.php sets the local config values
-require_once('config.php');
+require_once($pwd'config.php');
 
 // curl_get_simple.class.php handles the basic curl stuff
 require_once($cls.'curl_get/curl_get_simple.class.php');
@@ -31,6 +33,6 @@ require_once($cls.'cache_warm.class.php');
 require_once($cls.'cache_downloaded.class.php');
 
 // config_db.php provides the database connection settings.
-require_once('config_db.php');
+require_once($pwd.'config_db.php');
 
 
