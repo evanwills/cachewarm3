@@ -6,7 +6,7 @@ $pwd = dirname(__FILE__).'/';
 require_once($pwd.'config.default.php');
 
 // config.php sets the local config values
-require_once($pwd'config.php');
+require_once($pwd.'config.php');
 
 // curl_get_simple.class.php handles the basic curl stuff
 require_once($cls.'curl_get/curl_get_simple.class.php');
