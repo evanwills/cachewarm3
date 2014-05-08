@@ -108,7 +108,7 @@ VALUES
 			for( $a = 0 ; $a < count($url_list) ; $a += 1 )
 			{
 				// check the HTTP version of the url
-				$http = $this->curl->check_url("http://{$url_list[$a]['url']}");//debug($url_list[$a]);
+				$http = $this->curl->check_url("http://{$url_list[$a]['url']}");
 				$url_ok = false;
 				if( $http['is_valid'] == 1 )
 				{
@@ -204,28 +204,31 @@ VALUES
  */
 	public function get_urls_to_warm()
 	{
-		$now = '"'.$this->db->escape(gmdate('Y-m-d H:i:s')).'"';
-		$now_time = strtotime(gmdate('Y-m-d H:i:s'));
+		$gmt = gmdate('Y-m-d H:i:s');
+		$now = '"'.$this->db->escape($gmt).'"';
+		$now_time = strtotime($gmt);
 
 		$sql = '
 SELECT	 `urls`.`url_id` AS `id`
 	,REVERSE(`urls`.`url_url`) AS `url`
 	,`url_by_protocol`.`url_by_protocol_https` AS `https`
-FROM	`urls`
+	,`url_by_protocol`.`url_by_protocol_cache_expires` AS `expires`
+FROM	 `urls`
 	,`url_by_protocol`
 WHERE	`urls`.`url_id` = `url_by_protocol`.`url_by_protocol__url_id`
 AND	`urls`.`url__url_status_id` = '.$this->db->get_cached_id('good','_url_status').'
 AND	`url_by_protocol`.`url_by_protocol_ok` = 1
 AND	`url_by_protocol`.`url_by_protocol_is_cached` = 1
 AND	`url_by_protocol`.`url_by_protocol_cache_expires` < '.$now.'
-ORDER BY `url_by_protocol`.`url_by_protocol_cache_expires` DESC
-	,`urls`.`url_depth` ASC
+ORDER BY `urls`.`url_depth` ASC
+	,`url_by_protocol`.`url_by_protocol_cache_expires` DESC
 LIMIT 0,'.$this->get_urls_count;
 		$result = $this->db->fetch_($sql);
 		if( $result !== null )
 		{
 			$output = array();
-			for( $a = 0 ; $a < count($result) ; $a += 1 )
+			$c = count($result);
+			for( $a = 0 ; $a < $c ; $a += 1 )
 			{
 				if( $result[$a]['https'] == 1 )
 				{
@@ -235,7 +238,10 @@ LIMIT 0,'.$this->get_urls_count;
 				{
 					$result[$a]['url'] = "http://{$result[$a]['url']}";
 				}
+				$result[$a]['now'] = $gmt;
+				$result[$a]['age'] = ( $now_time - strtotime($result[$a]['expires']) );
 				$output[] = $result[$a];
+				unset($result[$a]);
 			}
 			return $output;
 		}
@@ -289,7 +295,7 @@ AND	`url_by_protocol`.`url_by_protocol_is_cached` = 0';
 		{
 			// throw
 		}
-		$downloaded = $this->curl->check_url( $url_info['url'] , false );//debug($url_info,$this->curl->httpobject->get_headers_array());
+		$downloaded = $this->curl->check_url( $url_info['url'] , false );
 		$status = 'good';
 		if( $downloaded['is_valid'] )
 		{
@@ -316,6 +322,7 @@ AND	`url_by_protocol_ok` = 0";
 				$status = 'bad';
 			}
 		}
+		// TODO implement logging feature to record info about URLs being hit.
 		$sql = "
 UPDATE	 `urls`
 	,`url_by_protocol`
