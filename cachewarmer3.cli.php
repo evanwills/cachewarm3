@@ -6,7 +6,7 @@ require_once('bootstrap.inc.php');
 $db = new db_mysql( array( 'host' => $host , 'username' => $db_user , 'password' => $db_pass , 'database' => $db_name ) );
 $curl = new curl_get_cache();
 
-$warm = new cache_warm( $db , $curl , $cache_local );
+$warm = new cache_warm( $db , $curl );
 
 if( $_SERVER['argc'] > 1 && $_SERVER['argv'][1] == 'cache_local' && isset($local_cache_path) )
 {
@@ -36,8 +36,8 @@ while( $memory_used < $memory_limit )
 			{
 				exit;
 			}
-			$warm->warm_url( $result[$a] );
-			$memory_used = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );
+			$warm->warm_url( $urls_list[$a] );
+			$memory_used = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );//debug($a,$memory_used,$memory_limit,( $memory_limit - $memory_used ));
 		}
 	}
 	$memory_used = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );
