@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS `urls` (
   `url__url_status_id` tinyint(3) unsigned NOT NULL DEFAULT 1 COMMENT 'Foreign key to the url_status table. The status of the URL',
   PRIMARY KEY			(`url_id`),
   KEY `IND_url_sub`		(`url_url_sub`),
-  KEY `IND_url_depth`		(`url_depth`)
+  KEY `IND_url_depth`		(`url_depth`),
   KEY `IND_url__url_status_id`		(`url__url_status_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Stores unique URLs';
 
