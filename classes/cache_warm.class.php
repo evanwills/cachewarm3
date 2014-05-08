@@ -345,4 +345,8 @@ AND	`url_by_protocol`.`url_by_protocol_https` = {$url_info['https']}";
 		}
 		return false;
 	}
+	public function get_get_urls_count()
+	{
+		return $this->get_urls_count;
+	}
 }
