@@ -2,7 +2,6 @@
 
 require_once('bootstrap.inc.php');
 
-
 $db = new db_mysql( array( 'host' => $host , 'username' => $db_user , 'password' => $db_pass , 'database' => $db_name ) );
 $curl = new curl_get_cache();
 
