@@ -3,4 +3,5 @@ php_errors.log
 debug.info
 config_db.php
 config.php
-
+resources/*.swp
+classes/*.swp
