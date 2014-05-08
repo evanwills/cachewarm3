@@ -1,0 +1,6 @@
+[submodule "classes/curl_get"]
+	path = classes/curl_get
+	url = /var/www/classes/curl_get/.git
+[submodule "classes/db_class"]
+	path = classes/db_class
+	url = /var/www/classes/db_class/.git
