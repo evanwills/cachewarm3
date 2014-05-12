@@ -7,6 +7,7 @@ $db = new db_mysql( array( 'host' => $host , 'username' => $db_user , 'password'
 $curl = new curl_get_cache();
 $warmer = new cache_warm( $db , $curl );
 
-// $source_list comes from bootstrap.inc.php > config.php
-//$warmer->update_url_list($source_list);
+// $source_list is defined in config.php which is called from 
+// bootstrap.inc.php
+$warmer->update_url_list( $source_list , $priority_sites );
 $warmer->check_new_urls();
