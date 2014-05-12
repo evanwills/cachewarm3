@@ -6,9 +6,14 @@ class cache_warm
 	private $curl = null;
 	private $GMT_offset = 0;
 	private $get_urls_count = 100;
+	private $limit_start = 0;
+	private $_order_by = ';
+ORDER BY `urls`.`url_domain_priority` DESC
+	,`urls`.`url_depth` ASC
+	,`url_by_protocol`.`url_by_protocol_cache_expires` DESC';
 
 
-	public function __construct( right_db $db , curl_get_cache $curl )
+	public function __construct( right_db $db , curl_get_cache $curl , $limit_start = 0 , $priority_order = 'domain_depth_expires')
 	{
 		$this->db = $db;
 		$this->db->cache_normalised();
@@ -16,9 +21,15 @@ class cache_warm
 
 		$serverOffset = new DateTime( 'now' , new DateTimeZone( date_default_timezone_get() ) );
 		$this->GMT_offset = $serverOffset->getOffset();
+
+		if( is_int($limit_start) && $limit_start > 0 )
+		{
+			$this->limit_start = ( $limit_start * $this->get_urls_count );
+		}
+		$this->set_order_by('domain_depth_expires');
 	}
 
-	public function update_url_list( $source_url , $check_new = false )
+	public function update_url_list( $source_url , $priority_domains = array() )
 	{
 		if( !$this->curl->valid_url($source_url) )
 		{
@@ -27,13 +38,18 @@ class cache_warm
 		}
 		$url_list = explode("\n",$this->curl->get_content($source_url));
 
-		
+		$priority_domains = $this->_make_priority_domains_usable( $priority_domains );
+
+		$unprioritised = count($priority_domains);
+
 		for( $a = 0 ; $a < count($url_list) ; $a += 1 )
 		{
 			$url_list[$a] = trim($url_list[$a]);
-			if( strlen($url_list[$a]) > 11 )
+			$url_bits = $this->curl->get_url_parts($url_list[$a]);
+			if( $url_bits != false )
 			{
-				if( substr($url_list[$a],0,5) == 'https' )
+				$url = $url_bits['domain'].$url_bits['path'].$url_bits['file'];
+				if( $url_bits['protocol'] == 'https' )
 				{
 					$url_list[$a] = substr($url_list[$a],8);
 				}
@@ -41,11 +57,27 @@ class cache_warm
 				{
 					$url_list[$a] = substr($url_list[$a],7);
 				}
-				$depth = substr_count($url_list[$a],'/');
+				$priority = false;
+				for( $b = 0 ; $b < $unprioritised ; $b += 1 )
+				{
+					if( substr( $url_list[$a] , 0 , $priority_domains[$b]['chars'] ) == $priority_domains[$b]['url'] )
+					{
+						$priority = $b;
+						if( $priority_domains[$b]['stop'] )
+						{
+							break;
+						}
+					}
+				}
+				if( $priority === false )
+				{
+					$priority = $unprioritised;
+				}
+				$depth = substr_count($url_bits['path'],'/');
 				$e_lru = $this->db->escape(strrev($url_list[$a]));
 				$e_lr = $this->db->escape(substr(strrev($url_list[$a]),0,2));
-				$sql = 'SELECT `url_id` FROM `urls` WHERE `url_url_sub` = "'.$e_lr.'" AND `url_url` = "'.$e_lru.'"';
-				$result = $this->db->fetch_1($sql);
+				$sql = 'SELECT `url_id` AS `id` , `url_domain_priority` AS `priority`  FROM `urls` WHERE `url_url_sub` = "'.$e_lr.'" AND `url_url` = "'.$e_lru.'"';
+				$result = $this->db->fetch_1_row($sql);
 				if( $result === null )
 				{
 					$sql = '
@@ -54,23 +86,83 @@ INSERT INTO `urls`
 	 `url_url`
 	,`url_url_sub`
 	,`url_depth`
+	,`url_domain_priority`
 )
 VALUES
 (
 	 "'.$e_lru.'"
 	,"'.$e_lr.'"
 	,'.$depth.'
+	,'.$priority.'
 )';
 					$this->db->query($sql);
 
 				}
+				elseif( $result['priority'] != $priority )
+				{
+					$this->db->query('UPDATE `urls` SET `url_domain_priority` = '.$priority.' WHERE `url_id` = '.$result['id']);
+				}
 			}
 		}
-		if( $check_new === true )
+	}
+
+/**
+ * @method _make_priority_domains_usable() takes an indexed array of
+ *	   strings and builds a two dimensional array where the
+ *	   second level provides meta info to help matching.
+ *
+ * @param array $input_priority_domains list of domains and or
+ *	  subsites that have priority
+ *
+ * @return array two dimensional array where the first level is an
+ *	   index and the second level contains mata info about the
+ *	   domain
+ */
+	private function _make_priority_domains_usable( $input_priority_domains )
+	{
+		if( !is_array($input_priority_domains) )
 		{
-			$this->check_new_urls();
+			// throw
+			return array();
+		}
+		else
+		{
+			$output_priorities_domains = array();
+			$tmp_test = array();
+			foreach( $input_priority_domains as $worthless_key => $value )
+			{
+				if( is_string($value) )
+				{
+					if( $value != '' )
+					{
+						$value = trim($value); // get rid of whitespace
+						$chars = strlen($value); // strlen is used to speed up string matching using substr
+
+						if( substr_count($value,'/') )
+						{
+							$domain_part = explode('/',$value);
+							// Check if the domain for this site is already in the priority list.
+							$tmp_found = array_search($domain_part[0],$tmp_test);
+							if( $tmp_found !== false )
+							{
+								// the domain which this site is a child of has been listed.
+								// change its stop status to fals so it doesn't block giving
+								// this site a lower priority than the parent domain
+								$output_priority_domains[$tmp_found]['stop'] = false;
+							}
+						}
+						$output_priority_domains[] = array( 'chars' => $chars , 'url' => $value , 'stop' => true );
+						$tmp_test[] = $value;
+					}
+					// else  discard empty strings
+				}
+				// else discard non strings
+
+			}
+			return $output_priority_domains;
 		}
 	}
+
 
 	public function check_new_urls()
 	{
@@ -202,11 +294,20 @@ VALUES
  *		false if there are no URLs ready or waiting for
  *			warming (script should exit on false)
  */
-	public function get_urls_to_warm()
+	public function get_urls_to_warm( $limit_start = true )
 	{
 		$gmt = gmdate('Y-m-d H:i:s');
 		$now = '"'.$this->db->escape($gmt).'"';
 		$now_time = strtotime($gmt);
+
+		if( $limit_start === false )
+		{
+			$limit_start = 0;
+		}
+		else
+		{
+			$limit_start = $this->limit_start;
+		}
 
 		$sql = '
 SELECT	 `urls`.`url_id` AS `id`
@@ -219,10 +320,8 @@ WHERE	`urls`.`url_id` = `url_by_protocol`.`url_by_protocol__url_id`
 AND	`urls`.`url__url_status_id` = '.$this->db->get_cached_id('good','_url_status').'
 AND	`url_by_protocol`.`url_by_protocol_ok` = 1
 AND	`url_by_protocol`.`url_by_protocol_is_cached` = 1
-AND	`url_by_protocol`.`url_by_protocol_cache_expires` < '.$now.'
-ORDER BY `urls`.`url_depth` ASC
-	,`url_by_protocol`.`url_by_protocol_cache_expires` DESC
-LIMIT 0,'.$this->get_urls_count;
+AND	`url_by_protocol`.`url_by_protocol_cache_expires` < '.$now.$this->_order_by.'
+LIMIT '.$limit_start.','.$this->get_urls_count;
 		$result = $this->db->fetch_($sql);
 		if( $result !== null )
 		{
@@ -245,6 +344,10 @@ LIMIT 0,'.$this->get_urls_count;
 			}
 			return $output;
 		}
+		elseif( $this->limit_start > 0 )
+		{
+			return $this->get_urls_to_warm( false );
+		}
 		else
 		{
 			$sql = '
@@ -263,6 +366,90 @@ LIMIT 0,1';
 		}
 		return false;
 	}
+
+/**
+ * @method set_order_by() allows you to set the priority order for
+ *	   which URLs get cached first
+ *
+ * @param stirng $input list of columns to order by separated by
+ *	  comma, space or underscore
+ *	  available columns are:
+ *		cache
+ *		depth
+ *		domain
+ *
+ * @return boolean TRUE if _order_by was updated. FALSE otherwise
+ */
+	public function set_order_by( $input )
+	{
+		if( !is_string($input) )
+		{
+			return false;
+		}
+		$spitter = false;
+		if( substr_count($input,',') )
+		{
+			$splitter = ',';
+		}
+		elseif( substr_count($input,' ') )
+		{
+			$splitter = ' ';
+		}
+		elseif( substr_count($input,'_') )
+		{
+			$splitter = '_';
+		}
+		if( $splitter !== false )
+		{
+			$input = explode($splitter,strtolower($input));
+			$fields = array('expires','domain','depth');
+			$sql = "\nORDER BY ";
+			$sep = '';
+			for( $a = 0 ; $a < count($input) ; $a += 1 )
+			{
+				switch($input[$a])
+				{
+					case 'expires':
+					case 'cache':
+						$input[$a] = 'expires';
+						if( in_array($input[$a],$fields) )
+						{
+							$sql .= $sep.'`url_by_protocol`.`url_by_protocol_cache_expires` DESC';
+							$sep = "\n\t,";
+							unset($fields[0]);
+						}
+						break;
+					case 'priority':
+					case 'domain':
+						$input[$a] = 'domain';
+						if( in_array($input[$a],$fields) )
+						{
+							$sql .= $sep.'`urls`.`url_domain_priority` DESC';
+							$sep = "\n\t,";
+							unset($fields[1]);
+						}
+						break;
+					case 'level':
+					case 'depth':
+						$input[$a] = 'depth';
+						if( in_array($input[$a],$fields) )
+						{
+							$sql .= $sep.'`urls`.`url_depth` ASC';
+							$sep = "\n\t,";
+							unset($fields[2]);
+						}
+						break;
+				}
+			}
+			if( $sql != "\nORDER BY " )
+			{
+				$this->_order_by = $sql;
+				return true;
+			}
+		}
+		return false;
+	}
+
 
 	public function get_uncached_urls($start = 0 )
 	{
