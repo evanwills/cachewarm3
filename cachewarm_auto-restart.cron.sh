@@ -17,7 +17,7 @@ then	# ==========================
 	# We could be running more instances of cachewarmer3.cli.php
 	# Let's do it!
 
-	php -f $path/cachewarmer3.cli.php &
+	php -f $path/cachewarmer3.cli.php $running &
 
 #	echo;
 #	echo "We can have up to $max_instances instances of the cachewarmer";
