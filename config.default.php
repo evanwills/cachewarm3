@@ -30,3 +30,60 @@ $root = dirname(__FILE__).'/';
  */
 $cls = $root.'classes/';
 
+
+/**
+ * @var array $priority_sites list of sites that should be given
+ *	priority when warming.
+ *
+ * If the script has insufficient resources to warm all URLs within
+ * the cache expiry time, This helps prioritise which URLs should be
+ * warmed.
+ *
+ * NOTE: URLs are already prioritised by how deep within a site they
+ *	 are.
+ *	 e.g. in the site hierarchy, pages that are direct children
+ *	      of the home page are given top priority. The children
+ *	      of those pages are given second priority and so on
+ *	 by listing a domain you are saying this domain is more
+ *	 important than domains that are not listed AND that this
+ *	 domain is more important than domains that are listed after
+ *	 it
+ *
+ * NOTE ALSO: subsites can be given lower (or higher) priority than
+ *	 their parent site.
+ *
+ * e.g. $priority_sites = array(
+ *		 'my.domain.net'
+ *		,'www.domain.net'
+ * 		,'other.domain.net'
+ *		,'www.domain.net/lower_priority'
+ *	)
+ *
+ * URLs under 'www.domain.net/lower_priority' have a lower priority
+ * than others under 'www.domain.net'. URLs whos sites are not listed
+ * in the priority list, all have the same value (in this case 4).
+ *	'my.domain.net' has priority 0 and
+ *	'www.domain.net/lower_priority' has priority 3
+ *	all unlisted sites will have priority 4.
+ */
+$priority_sites = array();
+
+/**
+ * @var string $order_by comma separated list of fields by which to
+ *	prioritise URLs to whose cache is to be warmed
+ *
+ *	fields that can be sorted by are:
+ *		'domain' - for installs that warm multiple domains
+ *			  concurrently this prioritises by domain
+ *			  (only relevant if you list domains above)
+ *		'depth' - how deep within a hierarchical site the
+ *			  page the URL points to is
+ *		'expiry' - when the cache expires for that URL
+ *
+ * The default order_by value is 'depth,cache'
+ *
+ * This is particularly relevant when you have more URLs to warm than
+ * you can warm before the cache expires
+ */
+$order_by = 'depth,cache';
+
