@@ -2,10 +2,12 @@
 
 require_once('bootstrap.inc.php');
 
+$instance = isset($_SERVER['argv'][1])?$_SERVER['argv'][1]:0;
+
 $db = new db_mysql( array( 'host' => $host , 'username' => $db_user , 'password' => $db_pass , 'database' => $db_name ) );
 $curl = new curl_get_cache();
 
-$warm = new cache_warm( $db , $curl );
+$warm = new cache_warm( $db , $curl , $instance );
 
 if( $_SERVER['argc'] > 1 && $_SERVER['argv'][1] == 'cache_local' && isset($local_cache_path) )
 {
