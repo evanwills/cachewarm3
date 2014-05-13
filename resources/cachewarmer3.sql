@@ -31,15 +31,15 @@ CREATE TABLE IF NOT EXISTS `urls` (
   `url_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `url_url` text NOT NULL COMMENT 'String reversed URL with http(s):// removed',
   `url_url_sub` CHAR(2) NOT NULL COMMENT 'Last two chars of the URL',
-  `url_depth` tinyint(3) unsigned NOT NULL COMMENT 'How deep within the site the URL is',
-  `url_domain_priority` tinyint(3) unsigned NOT NULL COMMENT 'The priority level of the domain (lower is more important)',
+  `url_depth` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT 'How deep within the site the URL is',
+  `url_site_priority` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT 'The priority level of the site (lower is more important)',
   `url__url_status_id` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT 'Foreign key to the url_status table. The status of the URL',
-  `url_last_updated` TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'when this entry was last modified',
+  `url_last_updated` TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When this entry was last modified',
   PRIMARY KEY			(`url_id`),
   KEY `IND_url_sub`		(`url_url_sub`),
   KEY `IND_url_depth`		(`url_depth`),
-  KEY `IND_url_domain_priority`		(`url_domain_priority`),
-  KEY `IND_url_depth__domain_priority`	(`url_depth`,`url_domain_priority`),
+  KEY `IND_url_site_priority`		(`url_site_priority`),
+  KEY `IND_url_depth__site_priority`	(`url_depth`,`url_site_priority`),
   KEY `IND_url__url_status_id`		(`url__url_status_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Stores unique URLs';
 
