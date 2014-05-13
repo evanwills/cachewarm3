@@ -2,7 +2,7 @@
 
 # ==========================
 # How many instances of cachewarmer3.cli.php can be run at one time
-max_instances=5;
+max_instances=1;
 
 # ==========================
 # The path to the directory this script is stored in
@@ -11,6 +11,20 @@ path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )";
 # ==========================
 # The number of cachewarmer3.cli.php instances currently running
 running=$( ps aux | grep 'cachewarmer3.cli.php' |grep -vc 'grep' );
+
+# ==========================
+# Lets see if we can run more than the default number of instances
+case $1 in
+	''|*[!0-9]) # Input was not a number
+		;;
+	*)	# Input was a number but was it greater than 1?
+		if [ $1 -gt 0 ]
+		then	# Yes! Lets reset our max instances to the
+			# user defined limit
+			max_instances=$1;
+		fi
+		;;
+esac
 
 if [ $running -lt $max_instances ]
 then	# ==========================
