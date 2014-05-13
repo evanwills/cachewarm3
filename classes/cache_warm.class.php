@@ -582,6 +582,24 @@ AND	`url_by_protocol`.`url_by_protocol_is_cached` = 0';
 	}
 
 /**
+ * @method get_ga_rankings() extracts the page ranking from Google
+ *	   Analytics and adds it to the databse to enable URLs to be
+ *	   prioritised by GA rank
+ *
+ * @param gapi $ga Google API object.
+ *
+ * @return boolean TRUE if ga ranking for URLs was updated. FALSE
+ *	   otherwise.
+ */
+	public function get_ga_rankings( gapi $ga )
+	{
+		// TODO fill in this method.
+		// for more info see:
+		// https://www.techpunch.co.uk/development/googles-analytics-api-php-gapi-interface
+
+	}
+
+/**
  * @method warm_url() attempts to warm the cache of an individual URL
  *
  * NOTE: If a URL could not be downloaded, it checks to see if a URL
