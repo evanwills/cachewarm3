@@ -73,11 +73,11 @@ $priority_sites = array();
  *	prioritise URLs to whose cache is to be warmed
  *
  *	fields that can be sorted by are:
- *		'domain' - for installs that warm multiple domains
- *			  concurrently this prioritises by domain
- *			  (only relevant if you list domains above)
- *		'depth' - how deep within a hierarchical site the
- *			  page the URL points to is
+ *		'site'  -  for installs that warm multiple sites
+ *			   concurrently this prioritises by site
+ *			   (only relevant if you list sites above)
+ *		'depth' -  how deep within a hierarchical site the
+ *			   page the URL points to is
  *		'expiry' - when the cache expires for that URL
  *
  * The default order_by value is 'depth,cache'
@@ -86,4 +86,15 @@ $priority_sites = array();
  * you can warm before the cache expires
  */
 $order_by = 'depth,cache';
+
+
+/**
+ * @var numeric $throttle_rate the maximum number of URLs that can be
+ *	warmed per second.
+ *
+ * NOTE: a throttle rate of less than 1 is converted to seconds per
+ *	 URL e.g. a throttle_rate of 0.2 = 1 url every 5 seconds.
+ *	 A throttle rate of less than zero means no throttling.
+ */
+$throttle_rate = -1;
 
