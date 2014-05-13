@@ -1,5 +1,10 @@
 <?php
 
+// As this script can potentially consume all the memory resources of
+// the server, we don't want it run via a web interface.
+if( isset($_SERVER['HTTP_HOST']) ) exit;
+
+
 $pwd = dirname(__FILE__).'/';
 
 // config.default.php sets the default config values.
@@ -8,6 +13,7 @@ require_once($pwd.'config.default.php');
 // config.php sets the local config values
 require_once($pwd.'config.php');
 
+debug('server');exit;
 // curl_get_simple.class.php handles the basic curl stuff
 require_once($cls.'curl_get/curl_get_simple.class.php');
 
