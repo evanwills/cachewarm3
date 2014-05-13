@@ -33,13 +33,18 @@ CREATE TABLE IF NOT EXISTS `urls` (
   `url_url_sub` CHAR(2) NOT NULL COMMENT 'Last two chars of the URL',
   `url_depth` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT 'How deep within the site the URL is',
   `url_site_priority` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT 'The priority level of the site (lower is more important)',
+  `url_ga_rank` smallint(5) unsigned DEFAULT NULL COMMENT 'URL\'s rank in Google Analytics',
   `url__url_status_id` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT 'Foreign key to the url_status table. The status of the URL',
   `url_last_updated` TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When this entry was last modified',
-  PRIMARY KEY			(`url_id`),
-  KEY `IND_url_sub`		(`url_url_sub`),
-  KEY `IND_url_depth`		(`url_depth`),
+  PRIMARY KEY				(`url_id`),
+  KEY `IND_url_sub`			(`url_url_sub`),
+  KEY `IND_url_depth`			(`url_depth`),
+  KEY `IND_url_ga_rank`			(`url_ga_rank`),
   KEY `IND_url_site_priority`		(`url_site_priority`),
   KEY `IND_url_depth__site_priority`	(`url_depth`,`url_site_priority`),
+  KEY `IND_url_depth__ga_rank`		(`url_depth`,`url_ga_rank`),
+  KEY `IND_url_ga_rank__site_priority`	(`url_ga_rank`,`url_site_priority`),
+  KEY `IND_url_depth__ga_rank__site_priority` (`url_depth`,`url_ga_rank`,`url_site_priority`),
   KEY `IND_url__url_status_id`		(`url__url_status_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Stores unique URLs';
 
