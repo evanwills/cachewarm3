@@ -8,6 +8,7 @@ $db = new db_mysql( array( 'host' => $host , 'username' => $db_user , 'password'
 $curl = new curl_get_cache();
 
 $warm = new cache_warm( $db , $curl , $instance );
+$rate = new throttle($throttle_rate);
 
 if( $_SERVER['argc'] > 1 && $_SERVER['argv'][1] == 'cache_local' && isset($local_cache_path) )
 {
@@ -38,7 +39,14 @@ while( $memory_used < $memory_limit )
 				exit;
 			}
 			$warm->warm_url( $urls_list[$a] );
-			$memory_used = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );//debug($a,$memory_used,$memory_limit,( $memory_limit - $memory_used ));
+			
+			// By default throttle does nothing. If you specify a throttle rate
+			// of greater than zero, then the warming is throttled to match the
+			// number of URLs per second you specified in $throttle_rate.
+			$rate->throttle();
+
+			// Update the amount of memory the script is using.
+			$memory_used = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );
 		}
 	}
 	$memory_used = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );
