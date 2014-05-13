@@ -7,7 +7,7 @@ class cache_warm
 	private $get_urls_count = 100;
 	private $limit_start = 0;
 	private $_order_by = ';
-ORDER BY `urls`.`url_domain_priority` DESC
+ORDER BY `urls`.`url_site_priority` DESC
 	,`urls`.`url_depth` ASC
 	,`url_by_protocol`.`url_by_protocol_cache_expires` DESC';
 
@@ -140,7 +140,7 @@ ORDER BY `urls`.`url_domain_priority` DESC
 
 				// See if the current URL is already listed in the DB
 				$result = $this->db->fetch_1_row(
-					'SELECT `url_id` AS `id` , `url_domain_priority` AS `priority`  FROM `urls` WHERE `url_url_sub` = "'.$e_lr.'" AND `url_url` = "'.$e_lru.'"'
+					'SELECT `url_id` AS `id` , `url_site_priority` AS `priority`  FROM `urls` WHERE `url_url_sub` = "'.$e_lr.'" AND `url_url` = "'.$e_lru.'"'
 				);
 				if( $result === null )
 				{
@@ -151,7 +151,7 @@ INSERT INTO `urls`
 	 `url_url`
 	,`url_url_sub`
 	,`url_depth`
-	,`url_domain_priority`
+	,`url_site_priority`
 )
 VALUES
 (
@@ -166,7 +166,7 @@ VALUES
 				elseif( $result['priority'] != $priority )
 				{
 					// Yep, it's aready in the DB but the priority has changed.
-					$this->db->query('UPDATE `urls` SET `url_domain_priority` = '.$priority.' WHERE `url_id` = '.$result['id']);
+					$this->db->query('UPDATE `urls` SET `url_site_priority` = '.$priority.' WHERE `url_id` = '.$result['id']);
 					$output = true;
 				}
 			}
@@ -521,7 +521,7 @@ LIMIT 0,1';
 						$input[$a] = 'domain';
 						if( in_array($input[$a],$fields) )
 						{
-							$sql .= $sep.'`urls`.`url_domain_priority` DESC';
+							$sql .= $sep.'`urls`.`url_site_priority` DESC';
 							$sep = "\n\t,";
 							unset($fields[1]);
 						}
