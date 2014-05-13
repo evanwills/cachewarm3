@@ -13,7 +13,6 @@ require_once($pwd.'config.default.php');
 // config.php sets the local config values
 require_once($pwd.'config.php');
 
-debug('server');exit;
 // curl_get_simple.class.php handles the basic curl stuff
 require_once($cls.'curl_get/curl_get_simple.class.php');
 
