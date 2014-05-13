@@ -27,7 +27,7 @@ ORDER BY `urls`.`url_site_priority` DESC
  * @param string $priority_order the order in which to prioritise
  *	  which URLs get warmed first
  */
-	public function __construct( right_db $db , curl_get_cache $curl , $limit_start = 0 , $priority_order = 'domain_depth_expires')
+	public function __construct( right_db $db , curl_get_cache $curl , $limit_start = 0 , $priority_order = 'site_depth_expires')
 	{
 		// set the db object
 		$this->db = $db;
@@ -45,9 +45,9 @@ ORDER BY `urls`.`url_site_priority` DESC
 			$this->limit_start = ( $limit_start * $this->get_urls_count );
 		}
 
-		// set the order_by priority. (Note this defines a static string used
-		// in a select statement.)
-		$this->set_order_by('domain_depth_expires');
+		// set the order_by priority.
+		// (Note this defines a static string used in a select statement.)
+		$this->set_order_by($priority_order);
 	}
 
 /**
@@ -473,7 +473,7 @@ LIMIT 0,1';
  *	  available columns are:
  *		cache
  *		depth
- *		domain
+ *		site
  *
  * @return boolean TRUE if _order_by was updated. FALSE otherwise
  */
@@ -516,8 +516,11 @@ LIMIT 0,1';
 							unset($fields[0]);
 						}
 						break;
+					case 'site':
+					case 'sites':
 					case 'priority':
 					case 'domain':
+					case 'domains':
 						$input[$a] = 'domain';
 						if( in_array($input[$a],$fields) )
 						{
@@ -673,4 +676,5 @@ AND	`url_by_protocol`.`url_by_protocol_https` = {$url_info['https']}";
 	{
 		return $this->get_urls_count;
 	}
+
 }
