@@ -6,7 +6,7 @@ class throttle
 
 	private $_throttle_time = 0;
 
-	private $_throttle_method = 'dont_throttle';
+	private $_throttle_method = '_dont_throttle';
 
 
 	public function __construct( $rate )
