@@ -41,7 +41,4 @@ require_once($cls.'cache_downloaded.class.php');
 // which URLs are warmed
 require_once($cls.'throttle.class.php');
 
-// config_db.php provides the database connection settings.
-require_once($pwd.'config_db.php');
-
 
