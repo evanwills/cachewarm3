@@ -6,6 +6,62 @@
  */
 $source_list = '';
 
+
+// ==================================================================
+// START: Database credentials
+
+/**
+ * @var string $db_host the host domain or IP address for the MySql
+ *	Database server
+ */
+
+$db_host = 'localhost';
+/**
+ * @var string $db_name the name of the database all the info is
+ *	stored in.
+ */
+
+$db_name = 'DATABASE NAME';
+/**
+ * @var string $db_user the username for the account that has access
+ *	to the database
+ */
+
+$db_user = 'DATABASE USERNAME';
+/**
+ * @var string $db_pass the passwrod for the account that has access
+ *	to the database
+ */
+
+$db_pass = 'DATABASE PASSWORD';
+
+
+// END: Database credentials
+// ==================================================================
+// START: Google Analytics credentials
+
+/**
+ * @var string $ga_email the email address for an account that has
+ *	access to the Google Analytics for the sites whose cache is
+ *	to be warmed
+ */
+$ga_email = '';
+
+/**
+ * @var string $ga_password the password for the account defined by
+ *	$ga_email
+ */
+$ga_password = '';
+
+/**
+ * @var string $ga_profile_id the Google Analytics ID for the profile
+ *	from which you want to extract the analytics
+ */
+$ga_profile_ID = '';
+
+// END: Google Analytics credentials
+// ==================================================================
+
 /**
  * @var string $local_cache_path absolute path to where the local
  *	cache sould be stored 
