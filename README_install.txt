@@ -7,22 +7,20 @@ How to install Cachewarmer3
 
 2  Copy config.default.php to config.php
 
-3  Copy config_db.default.php to config_db.php
+3  Edit the valuses of config.php to suit your environment.
 
-4  Edit the valuses of config.php to suit your environment.
+4  Edit the valuses of config_db.php to suit your environment.
 
-5  Edit the valuses of config_db.php to suit your environment.
-
-6  Set up a cron for url_updater.cli.php to run daily.
+5  Set up a cron for url_updater.cli.php to run daily.
    NOTE: The initial fun of url_update.cli.php will take a long time
    	 to run depending on how many URLs it has to load into the DB
 	 and discover the cache for. (My initial run took about 8 hours.)
 
-7  Run url_updater.cli.php manually. This will help confirm that all
+6  Run url_updater.cli.php manually. This will help confirm that all
    your config settings work. It will also provide data for use by
    cachewarmer3.cli.php
   
-8  Set up a cron for cachewarm_auto-restart.cron.sh to run every
+7  Set up a cron for cachewarm_auto-restart.cron.sh to run every
    minute.
 
    cachewarm_auto-restart.cron.sh checks to see if the appropriate
@@ -38,4 +36,8 @@ How to install Cachewarmer3
    NOTE: I don't have any Windows sys admin skills so if you're a
 	 Windows shop, you'll have to wing it. (If you write a windows
 	 equivelant, please submit it and I'll add it to the repo)
+
+8  remove write permissions from config.php
+
+9  remove public read permissions from config.php
 
