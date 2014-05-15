@@ -4,10 +4,10 @@ class cache_warm
 {
 	protected $_db = null;
 	protected $_curl = null;
-	protected $_get_urls_count = 100;
+	protected $_batch_size = 100;
 	protected $_limit_start = 0;
 	protected $_order_by = '
-ORDER BY `urls`.`url_site_priority` DESC
+ORDER BY `urls`.`url_site_priority` ASC
 	,`urls`.`url_depth` ASC
 	,`url_by_protocol`.`url_by_protocol_cache_expires` DESC';
 
@@ -18,16 +18,22 @@ ORDER BY `urls`.`url_site_priority` DESC
  *
  * @param curl_get_cache $curl cURL object to get the contents of URLs
  *
- * @param integer $limit_start When warming the URLs, the warming is
+ * @param integer $instance When warming the URLs, the warming is
  *	  done in batches. If you are running multiple instances of
- *	  the warming script. $limit_start represents the order number
+ *	  the warming script. $instance represents the order number
  *	  of the instance so that there is no overlap in URLs that are
  *	  warmed.
+ *
+ * @param integer $batch_size the number of URLs to be processed in
+ *	  each batch
+ * 	  NOTE:  The higher the number of instances you plan to run
+ *	 	 concurrently, the smaller the batch size should be.
+ *		 Otherwise, there will be an overlap
  *
  * @param string $priority_order the order in which to prioritise
  *	  which URLs get warmed first
  */
-	public function __construct( right_db $db , curl_get_cache $curl , $urls_count = 100 , $limit_start = 0 )
+	public function __construct( right_db $db , curl_get_cache $curl , $instance = 0 , $batch_size = 100 )
 	{
 		// set the db object
 		$this->_db = $db;
@@ -39,12 +45,12 @@ ORDER BY `urls`.`url_site_priority` DESC
 		// set the cURL object
 		$this->_curl = $curl;
 
-		$this->set_get_urls_count($urls_count);
+		$this->set_batch_size($batch_size);
 
 		// set limit start
-		if( is_int($limit_start) && $limit_start > 0 )
+		if( is_int($instance) && $instance > 0 )
 		{
-			$this->_limit_start = ( $limit_start * $this->_get_urls_count );
+			$this->_limit_start = ( $instance * $this->_batch_size );
 		}
 	}
 /**
@@ -100,6 +106,7 @@ SELECT	 `urls`.`url_id` AS `id`
 	,REVERSE(`urls`.`url_url`) AS `url`
 	,`url_by_protocol`.`url_by_protocol_https` AS `https`
 	,`url_by_protocol`.`url_by_protocol_cache_expires` AS `expires`
+--	,`urls`.`url_site_priority` AS `priority`
 FROM	 `urls`
 	,`url_by_protocol`
 WHERE	`urls`.`url_id` = `url_by_protocol`.`url_by_protocol__url_id`
@@ -107,7 +114,7 @@ AND	`urls`.`url__url_status_id` = '.$this->_db->get_cached_id('good','_url_statu
 AND	`url_by_protocol`.`url_by_protocol_ok` = 1
 AND	`url_by_protocol`.`url_by_protocol_is_cached` = 1
 AND	`url_by_protocol`.`url_by_protocol_cache_expires` < '.$now.$this->_order_by.'
-LIMIT '.$limit_start.','.$this->_get_urls_count;
+LIMIT '.$limit_start.','.$this->_batch_size;
 		$result = $this->_db->fetch_($sql);
 		if( $result !== null )
 		{
@@ -272,7 +279,7 @@ LIMIT 0,1';
 		{
 			// throw
 		}
-		$downloaded = $this->_curl->check_url( $url_info['url'] , false );
+		$downloaded = $this->_curl->check_url( $url_info['url'] , false );debug($url_info,$downloaded);
 		$status = 'good';
 		if( $downloaded['is_valid'] )
 		{
@@ -320,18 +327,18 @@ AND	`url_by_protocol`.`url_by_protocol_https` = {$url_info['https']}";
 		return $output;
 	}
 
-	public function set_get_urls_count( $count )
+	public function set_batch_size( $count )
 	{
 		if( is_int($count) && $count > 0 )
 		{
-			$this->_get_urls_count = $count;
+			$this->_batch_size = $count;
 			return true;
 		}
 		return false;
 	}
-	public function get_get_urls_count()
+	public function get_batch_size()
 	{
-		return $this->_get_urls_count;
+		return $this->_batch_size;
 	}
 
 }
@@ -686,15 +693,36 @@ class cache_warm_ga_stats extends cache_warm
 {
 	private $_ga = null;
 	private $_profileID = '';
-	protected $_get_urls_count = 1000;
-	private $_batch_size = 10;
+	private $_top_x_urls = 1000;
 	private $_skew_recent = 1;
 	private $_skew_distant = 1;
 	private $_average = array();
 	private $_skew_no_comparison_method ='_skew_no_comparison_raw';
 	private $_ga_sleep_time = 10;
 
-	public function __construct( right_db $db , curl_get_cache $curl , $urls_count = 1000 , $limit_start = 0 )
+/**
+ * @method __construct()
+ *
+ * @param right_db $db database connection object
+ *
+ * @param curl_get_cache $curl cURL object to get the contents of URLs
+ *
+ * @param integer $instance When warming the URLs, the warming is
+ *	  done in batches. If you are running multiple instances of
+ *	  the warming script. $instance represents the order number
+ *	  of the instance so that there is no overlap in URLs that are
+ *	  warmed.
+ *
+ * @param integer $batch_size the number of URLs to be processed in
+ *	  each batch
+ * 	  NOTE:  The higher the number of instances you plan to run
+ *	 	 concurrently, the smaller the batch size should be.
+ *		 Otherwise, there will be an overlap
+ *
+ * @param string $priority_order the order in which to prioritise
+ *	  which URLs get warmed first
+ */
+	public function __construct( right_db $db , curl_get_cache $curl , $instance = 0 , $batch_size = 100 )
 	{
 		parent::__construct( $db , $curl , $urls_count , $limit_start );
 	}
@@ -703,7 +731,7 @@ class cache_warm_ga_stats extends cache_warm
 	{
 		if( is_int($top_urls) && $top_urls > 10 )
 		{
-			$this->_get_urls_count = $top_urls;
+			$this->_top_x_urls = $top_urls;
 			return true;
 		}
 		return false;
@@ -818,7 +846,7 @@ class cache_warm_ga_stats extends cache_warm
 		// URLs from last year will no longer be available. But we want to
 		// match the ranking of as many URLs as possible so to ensure the
 		// maximum overlap in URLs we'll just get more.
-		$limit = ( $this->_get_urls_count * 2 );
+		$limit = ( $this->_top_x_urls * 2 );
 
 		$start = 0;
 
@@ -935,7 +963,7 @@ class cache_warm_ga_stats extends cache_warm
 		$start = 0;
 
 		// lets start getting GA data in batches.
-		while( $start > $this->_get_urls_count )
+		while( $start > $this->_top_x_urls )
 		{
 			if( ! $this->_get_ga_report_data( $last_month_from , $last_month_to , $start , 'recent' ) )
 			{
@@ -962,7 +990,7 @@ class cache_warm_ga_stats extends cache_warm
 
 		// sort the rankings in reverse order.
 		arsort($average);
-//		while( count($avarage) > $this->_get_urls_count )
+//		while( count($avarage) > $this->_top_x_urls )
 //		{
 //			array_pop($average);
 //		}
