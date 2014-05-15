@@ -135,6 +135,8 @@ $priority_sites = array();
  *		'depth' -  how deep within a hierarchical site the
  *			   page the URL points to is
  *		'expiry' - when the cache expires for that URL
+ *		'rank'  -  Page rank according to Google Analytics'
+ *			   pageviews in a given period
  *
  * The default order_by value is 'depth,cache'
  *
@@ -153,4 +155,14 @@ $order_by = 'depth,cache';
  *	 A throttle rate of less than zero means no throttling.
  */
 $throttle_rate = -1;
+
+
+/**
+ * @var integer $batch_size the number of URLs to be processes in a
+ *	cycle
+ *
+ * NOTE: The more instances of cachewarmer3.cli.php you run
+ *	 concurrently, the smaller the batch size should be.
+ */
+$batch_size = 10;
 
