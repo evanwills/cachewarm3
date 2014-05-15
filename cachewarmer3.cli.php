@@ -16,10 +16,12 @@ require_once($cls.'throttle.class.php');
 
 $instance = isset($_SERVER['argv'][1])?$_SERVER['argv'][1]:0;
 
-$db = new db_mysql( array( 'host' => $db_host , 'username' => $db_user , 'password' => $db_pass , 'database' => $db_name ) );
+$db  =  new db_mysql( array( 'host' => $db_host , 'username' => $db_user , 'password' => $db_pass , 'database' => $db_name ) );
+
 $curl = new curl_get_cache();
 
-$warm = new cache_warm( $db , $curl , $instance );
+$warm = new cache_warm( $db , $curl , $instance , $batch_size );
+
 $rate = new throttle($throttle_rate);
 
 if( $_SERVER['argc'] > 1 && $_SERVER['argv'][1] == 'cache_local' && isset($local_cache_path) )
@@ -58,9 +60,10 @@ while( $memory_used < $memory_limit )
 			$rate->throttle();
 
 			// Update the amount of memory the script is using.
-			$memory_used = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );
+			$memory_used = round( ( memory_get_usage() / 1024 ) / 1024 , 3 );
 		}
 	}
+
 	$memory_used = round( ( memory_get_usage() / 1024 ) / 1024 ,3 );
 }
 
