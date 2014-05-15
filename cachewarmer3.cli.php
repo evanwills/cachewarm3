@@ -16,7 +16,7 @@ require_once($cls.'throttle.class.php');
 
 $instance = isset($_SERVER['argv'][1])?$_SERVER['argv'][1]:0;
 
-$db = new db_mysql( array( 'host' => $host , 'username' => $db_user , 'password' => $db_pass , 'database' => $db_name ) );
+$db = new db_mysql( array( 'host' => $db_host , 'username' => $db_user , 'password' => $db_pass , 'database' => $db_name ) );
 $curl = new curl_get_cache();
 
 $warm = new cache_warm( $db , $curl , $instance );
