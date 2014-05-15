@@ -32,13 +32,4 @@ require_once($cls.'db_class/db_mysql.class.php');
 // process
 require_once($cls.'cache_warm.class.php');
 
-// cache_downloaded.class.php provides the capacity to generate a
-// local version of the website either as backup or for CSS/Javascript
-// testing
-require_once($cls.'cache_downloaded.class.php');
-
-// throttle.class.php provides the capacity to limit the rate at
-// which URLs are warmed
-require_once($cls.'throttle.class.php');
-
 
