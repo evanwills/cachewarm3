@@ -2,6 +2,18 @@
 
 require_once('bootstrap.inc.php');
 
+// throttle.class.php provides the capacity to limit the rate at
+// which URLs are warmed
+require_once($cls.'throttle.class.php');
+
+// cache_downloaded.class.php provides the capacity to generate a
+// local version of the website either as backup or for CSS/Javascript
+// testing
+//require_once($cls.'cache_downloaded.class.php');
+
+
+
+
 $instance = isset($_SERVER['argv'][1])?$_SERVER['argv'][1]:0;
 
 $db = new db_mysql( array( 'host' => $host , 'username' => $db_user , 'password' => $db_pass , 'database' => $db_name ) );
