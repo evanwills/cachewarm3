@@ -34,7 +34,7 @@ class curl_get_cache extends curl_get_url_simple
 
 		$this->httpobject = new HTTPobject( '' , true );
 
-		$this->save_locally = new cache_downloaded($this,'');
+//		$this->save_locally = new cache_downloaded($this,'');
 
 //		$serverOffset = new DateTime( 'now' , new DateTimeZone( date_default_timezone_get() ) );
 //		$this->gmt_offset = $serverOffset->getOffset();
@@ -91,10 +91,10 @@ class curl_get_cache extends curl_get_url_simple
 				$output['expires'] = $this->httpobject->get_header('expires');
 				$output['date'] = date('Y-m-d H:i:s',$output['expires']);
 			}
-			if( $headers_only === false )
-			{
-				$this->save_locally->write_to_file_system($url,$this->httpobject);
-			}
+//			if( $headers_only === false )
+//			{
+//				$this->save_locally->write_to_file_system($url,$this->httpobject);
+//			}
 		}
 		return $output;
 	}
