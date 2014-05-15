@@ -2,11 +2,11 @@
 
 class cache_warm
 {
-	private $_db = null;
-	private $_curl = null;
-	private $_get_urls_count = 100;
-	private $_limit_start = 0;
-	private $_order_by = ';
+	protected $_db = null;
+	protected $_curl = null;
+	protected $_get_urls_count = 100;
+	protected $_limit_start = 0;
+	protected $_order_by = '
 ORDER BY `urls`.`url_site_priority` DESC
 	,`urls`.`url_depth` ASC
 	,`url_by_protocol`.`url_by_protocol_cache_expires` DESC';
@@ -39,16 +39,13 @@ ORDER BY `urls`.`url_site_priority` DESC
 		// set the cURL object
 		$this->_curl = $curl;
 
+		$this->set_get_urls_count($urls_count);
+
 		// set limit start
 		if( is_int($limit_start) && $limit_start > 0 )
 		{
 			$this->_limit_start = ( $limit_start * $this->_get_urls_count );
 		}
-		$this->set_get_urls_count($urls_count);
-
-		// set the order_by priority.
-		// (Note this defines a static string used in a select statement.)
-		$this->set_order_by($priority_order);
 	}
 /**
  * @method get_urls_to_warm() returns an array of URLs that need to
@@ -434,7 +431,7 @@ class cache_warm_check_urls extends cache_warm
 				$result = $this->_db->fetch_1_row(
 					'SELECT `url_id` AS `id` , `url_site_priority` AS `priority`  FROM `urls` WHERE `url_url_sub` = "'.$e_lr.'" AND `url_url` = "'.$e_lru.'"'
 				);
-				if( $result === null )
+				if( $result === null || ( is_array($result) && empty($result) ) )
 				{
 					// OK not listed. Let's add it to the DB
 					$sql = '
@@ -689,7 +686,7 @@ class cache_warm_ga_stats extends cache_warm
 {
 	private $_ga = null;
 	private $_profileID = '';
-	private $_get_urls_count = 1000;
+	protected $_get_urls_count = 1000;
 	private $_batch_size = 10;
 	private $_skew_recent = 1;
 	private $_skew_distant = 1;
@@ -802,7 +799,7 @@ class cache_warm_ga_stats extends cache_warm
 		}
 		else
 		{
-			$this->_profileID = $profile
+			$this->_profileID = $profile;
 		}
 		$this->_ga = $ga;
 
@@ -923,7 +920,7 @@ class cache_warm_ga_stats extends cache_warm
 		}
 		else
 		{
-			$this->_profileID = $profile
+			$this->_profileID = $profile;
 		}
 		$this->_ga = $ga;
 
@@ -1008,7 +1005,7 @@ class cache_warm_ga_stats extends cache_warm
 					$this->_average[$dimension['pagePath']] = array();
 				}
 				// make sure the value is the correct type
-				settype('integer',$dimension['pageviews']);
+				settype($dimension['pageviews'],'integer');
 
 				// make the URL the key and the rank one child in the URL's rank
 				// array
@@ -1047,7 +1044,7 @@ AND	`url_url_sub` = '.$lr;
 		return ( ( $recent * ( $this->_skew_recent - 1 ) ) / $this->_skew_recent );
 	}
 
-	private function _skew_no_comparison_simple( $distant , $recent )
+	private function _skew_no_comparison_standard( $distant , $recent )
 	{
 		return ( ( ( $distant * $this->_skew_distant ) + ( $recent * $this->_skew_recent ) ) / ( $this->_skew_distant + $this->_skew_recent ) );
 	}
