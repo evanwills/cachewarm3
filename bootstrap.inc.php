@@ -5,10 +5,26 @@
 if( isset($_SERVER['HTTP_HOST']) ) exit;
 
 
-$pwd = dirname(__FILE__).'/';
+$root = $pwd = dirname(__FILE__).'/';
+$cls = $root.'classes/';
 
-// config.default.php sets the default config values.
-require_once($pwd.'config.default.php');
+// See config.default.php for more info on the following variables.
+$source_list = '';
+$db_host = '';
+$db_name = '';
+$db_user = '';
+$db_pass = '';
+$ga_email = '';
+$ga_password = '';
+$ga_profile_ID = '';
+$local_cache_path = '';
+$memory_limit = 50;
+$priority_sites = array();
+$order_by = 'depth,cache';
+$throttle_rate = -1;
+$batch_size = 10;
+$revisit_in = 0;
+
 
 // config.php sets the local config values
 require_once($pwd.'config.php');
