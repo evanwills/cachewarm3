@@ -2,14 +2,39 @@
 
 class cache_warm
 {
+/**
+ * @var right_db $_db database connection object
+ */
 	protected $_db = null;
+/**
+ * @var curl_get_cache $_curl object for handlinng curl transactions
+ */
 	protected $_curl = null;
+/**
+ * @var integer $_batch_size the number of URLs to be warmed at any
+ *	given time
+ */
 	protected $_batch_size = 100;
+
+/**
+ * @var intiger $_limit_start the instance number multiplied with the
+ *	$_batch_size
+ */
 	protected $_limit_start = 0;
+
+/**
+ * @var integer $_revisit_in the minimum number of seconds before we
+ *	can attempt to warm a URL's cache
+ */
+	protected $_revisit_in = 0;
+/**
+ * @var string $_order_by an SQL snippet that manages the priorities
+ *	by which the URLs to be warmed are sorted.
+ */
 	protected $_order_by = '
 ORDER BY `urls`.`url_site_priority` ASC
 	,`urls`.`url_depth` ASC
-	,`url_by_protocol`.`url_by_protocol_cache_expires` DESC';
+	,`url_by_protocol`.`url_by_protocol_cache_expires` ASC';
 
 /**
  * @method __construct()
@@ -64,15 +89,14 @@ ORDER BY `urls`.`url_site_priority` ASC
  *
  * @return mixed array if there are URLs to be warmed it returns an indexed array of associative arrays:
  *		array [] => array(
- *			 'id' => [X] integer the UID for that URL in
- *			 	 the DB
- *			,'url' => the URL (excluding protocol and
- *				  slashes)
- *			,'sub' => the last to characters of the URL
- *			,'http' => boolean whether or not to warm the
- *				   HTTP version of the URL
- *			,'https' => boolean whether or not to warm
- *				    the HTTPs version of the URL
+ *			 'id'	=>    [X] integer the UID for that
+ *				      URL in the DB
+ *			,'url'	 =>   the URL (excluding protocol and
+ *				      slashes)
+ *			,'https'  =>  boolean whether or not to warm
+ *				      the HTTPs version of the URL
+ *			,'expires' => boolean whether or not to warm
+ *				      the HTTPs version of the URL
  *		)
  *		integer If the script should wait because there are
  *			no URLs to be warmed
@@ -107,10 +131,12 @@ SELECT	 `urls`.`url_id` AS `id`
 	,`url_by_protocol`.`url_by_protocol_https` AS `https`
 	,`url_by_protocol`.`url_by_protocol_cache_expires` AS `expires`
 --	,`urls`.`url_site_priority` AS `priority`
+--	,`urls`.`url_ga_rank AS `rank`
 FROM	 `urls`
 	,`url_by_protocol`
 WHERE	`urls`.`url_id` = `url_by_protocol`.`url_by_protocol__url_id`
 AND	`urls`.`url__url_status_id` = '.$this->_db->get_cached_id('good','_url_status').'
+AND	`url_by_protocol`.`url_by_protocol_last_updated` < "'.$this->_db->escape( date( 'Y-m-d H:i:s' , ( time() -  $this->_revisit_in ) ) ).'"
 AND	`url_by_protocol`.`url_by_protocol_ok` = 1
 AND	`url_by_protocol`.`url_by_protocol_is_cached` = 1
 AND	`url_by_protocol`.`url_by_protocol_cache_expires` < '.$now.$this->_order_by.'
@@ -131,10 +157,6 @@ LIMIT '.$limit_start.','.$this->_batch_size;
 				{
 					$result[$a]['url'] = "http://{$result[$a]['url']}";
 				}
-				// Add the GMT now time to the array for this URL
-				$result[$a]['now'] = $gmt;
-				// Add the difference between the $gmt now time and the cache expiration time
-				$result[$a]['age'] = ( $now_time - strtotime($result[$a]['expires']) );
 				$output[] = $result[$a];
 				unset($result[$a]);
 			}
@@ -169,93 +191,6 @@ LIMIT 0,1';
 	}
 
 /**
- * @method set_order_by() allows you to set the priority order for
- *	   which URLs get cached first
- *
- * @param stirng $input list of columns to order by separated by
- *	  comma, space or underscore
- *	  available columns are:
- *		cache
- *		depth
- *		site
- *
- * @return boolean TRUE if _order_by was updated. FALSE otherwise
- */
-	public function set_order_by( $input )
-	{
-		if( !is_string($input) )
-		{
-			return false;
-		}
-		$spitter = false;
-		if( substr_count($input,',') )
-		{
-			$splitter = ',';
-		}
-		elseif( substr_count($input,' ') )
-		{
-			$splitter = ' ';
-		}
-		elseif( substr_count($input,'_') )
-		{
-			$splitter = '_';
-		}
-		if( $splitter !== false )
-		{
-			$input = explode($splitter,strtolower($input));
-			$fields = array('expires','domain','depth');
-			$sql = "\nORDER BY ";
-			$sep = '';
-			for( $a = 0 ; $a < count($input) ; $a += 1 )
-			{
-				switch($input[$a])
-				{
-					case 'expires':
-					case 'cache':
-						$input[$a] = 'expires';
-						if( in_array($input[$a],$fields) )
-						{
-							$sql .= $sep.'`url_by_protocol`.`url_by_protocol_cache_expires` DESC';
-							$sep = "\n\t,";
-							unset($fields[0]);
-						}
-						break;
-					case 'site':
-					case 'sites':
-					case 'priority':
-					case 'domain':
-					case 'domains':
-						$input[$a] = 'domain';
-						if( in_array($input[$a],$fields) )
-						{
-							$sql .= $sep.'`urls`.`url_site_priority` DESC';
-							$sep = "\n\t,";
-							unset($fields[1]);
-						}
-						break;
-					case 'level':
-					case 'depth':
-						$input[$a] = 'depth';
-						if( in_array($input[$a],$fields) )
-						{
-							$sql .= $sep.'`urls`.`url_depth` ASC';
-							$sep = "\n\t,";
-							unset($fields[2]);
-						}
-						break;
-				}
-			}
-			if( $sql != "\nORDER BY " )
-			{
-				$this->_order_by = $sql;
-				return true;
-			}
-		}
-		return false;
-	}
-
-
-/**
  * @method warm_url() attempts to warm the cache of an individual URL
  *
  * NOTE: If a URL could not be downloaded, it checks to see if a URL
@@ -269,24 +204,49 @@ LIMIT 0,1';
  *
  * @param array $url_info containing the URL and some metadata about
  *	  that URL
+ *		array [] => array(
+ *			 'id'	=>    [X] integer the UID for that
+ *				      URL in the DB
+ *			,'url'	 =>   the URL (excluding protocol and
+ *				      slashes)
+ *			,'https'  =>  boolean whether or not to warm
+ *				      the HTTPs version of the URL
+ *			,'expires' => boolean whether or not to warm
+ *				      the HTTPs version of the URL
+ *		)
  *
  * @return boolean TRUE if the URL was successfully downloaded. FALSE
  *	   otherwise.
  */
 	public function warm_url( $url_info )
 	{
-		if( !is_array($url_info) || !isset($url_info['url']) || !isset($url_info['sub']) || !isset($url_info['http']) || !isset($url_info['https']) )
+		// validate $url_info
+		if( !is_array($url_info) || !isset($url_info['url']) || !isset($url_info['id']) || !isset($url_info['expires']) || !isset($url_info['https']) )
 		{
 			// throw
+			return false;
 		}
+		$url_info['now    '] = gmdate('Y-m-d H:i:s');
+		$url_info['n__time'] = strtotime(gmdate('Y-m-d H:i:s'));
+		$url_info['e__time'] = strtotime($url_info['expires']);
+		$url_info['t__diff'] = round( ( $url_info['n__time'] - $url_info['e__time'] ) / 3600 , 2 ).' hours' ;
+
+
+		// try downloading the contents of the URL
 		$downloaded = $this->_curl->check_url( $url_info['url'] , false );debug($url_info,$downloaded);
+		$writer = fopen('log/urls_and_cache-times.txt','a+');
+		fwrite($writer,"\n{$url_info['url']}\t".date('Y-m-d H:i:s',$downloaded['expires'])."\t{$url_info['now    ']}");
+		fclose($writer);
 		$status = 'good';
 		if( $downloaded['is_valid'] )
 		{
+			// yay page downloaded fine
 			$output = true;
 		}
 		else
 		{
+			// bummer the page didn't download.
+			// TODO  check the HTTP headers here to see what's going on.
 			$output = false;
 			if( $url_info['https'] == 1 )
 			{
@@ -296,6 +256,7 @@ LIMIT 0,1';
 			{
 				$protocol = 1;
 			}
+			// Lets see if it's protocol counterpart is also dead.
 			$sql = "
 SELECT	COUNT(*) AS `count`
 FROM	`url_by_protocol`
@@ -303,6 +264,8 @@ WHERE	`url_by_protocol_https` = $protocol
 AND	`url_by_protocol_ok` = 0";
 			if( $this->_db->fetch_1($sql) == 1 )
 			{
+				// OK. The URL is not available via either protocol, we'll mark
+				// it as bad in the DB
 				$status = 'bad';
 			}
 		}
@@ -312,7 +275,9 @@ UPDATE	 `urls`
 	,`url_by_protocol`
 SET	 `urls`.`url__url_status_id` = ".$this->_db->get_cached_id($status,'_url_status')."
 	,`url_by_protocol_ok` = {$downloaded['is_valid']}
-	,`url_by_protocol_is_cached` = {$downloaded['is_cached']}";
+	,`url_by_protocol_is_cached` = {$downloaded['is_cached']}
+	,`url_by_protocol_last_updated` = '".$this->_db->escape(date('Y-m-d H:i:s'))."'";
+	
 		if( $downloaded['expires'] !== null )
 		{
 			$sql .= "\n\t,`url_by_protocol_cache_expires` = '".$this->_db->escape(date('Y-m-d H:i:s',$downloaded['expires']))."'";
@@ -327,6 +292,14 @@ AND	`url_by_protocol`.`url_by_protocol_https` = {$url_info['https']}";
 		return $output;
 	}
 
+/**
+ * @method set_batch_size() sets the _batch_size property
+ *
+ * @param integer $count the number of URLs to be processed in a
+ *	  single batch
+ *
+ * @return boolean TRUE if $_batch_size was updated. FALSE otherwise
+ */
 	public function set_batch_size( $count )
 	{
 		if( is_int($count) && $count > 0 )
@@ -336,9 +309,214 @@ AND	`url_by_protocol`.`url_by_protocol_https` = {$url_info['https']}";
 		}
 		return false;
 	}
-	public function get_batch_size()
+
+/**
+ * @method get_property() returns the value of the object property
+ *	   requested
+ *
+ * @param string $property_name the name of the object property to be
+ *	  retrieved
+ *
+ * @return mixed whatever the value of the object property currently
+ *	   is. NULL if the property was not found.
+ */
+	public function get_property( $property_name )
 	{
-		return $this->_batch_size;
+		if( is_string($property_name) )
+		{
+			$property_name = strtolower($trim($property_name));
+			if( substr($property_name,0,1) != '_' )
+			{
+				$property_name = "_$property_name";
+			}
+			if( property_exists($this,$property_name) )
+			{
+				return $this->$property_name;
+			}
+		}
+		return NULL;
+	}
+
+/**
+ * @method set_order_by() allows you to set the priority order for
+ *	   which URLs get cached first
+ *
+ * @param stirng $input list of columns to order by separated by
+ *	  comma, space or underscore
+ *	  available columns are:
+ *		cache
+ *		depth
+ *		site
+ *		rank
+ *		updated
+ *	  e.g.	'depth,cache'
+ *
+ * @return boolean TRUE if _order_by was updated. FALSE otherwise
+ */
+	public function set_order_by( $input )
+	{
+		if( !is_string($input) )
+		{
+			return false;
+		}
+
+		// Lets see if this is a we can find something to split the list on
+		$spitter = false;
+		if( substr_count($input,',') )
+		{
+			$splitter = ',';
+		}
+		elseif( substr_count($input,' ') )
+		{
+			$splitter = ' ';
+		}
+		elseif( substr_count($input,'_') || $this->_validate_order_by_item($input) )
+		{
+			// We've either found a '_' or $input is one of the order_by
+			// options. If it's a single order_by option, we'll split it
+			// anyway to get an array of one item.
+			$splitter = '_';
+		}
+
+		if( $splitter !== false )
+		{
+			$input = explode($splitter,$input);
+
+			// we don't want duplication of ORDER BY statements in the SQL so
+			// as one is used, we'll remove it from the fields list of
+			// available fields.
+			$fields = array('expires','site','depth','rank','warmed');
+
+			$sql = "\nORDER BY ";
+			$sep = '';
+			for( $a = 0 ; $a < count($input) ; $a += 1 )
+			{
+				switch($this->_validate_order_by_item($input[$a]))
+				{
+					case 'expires':
+						// when the cache last expired
+						if( in_array('expires',$fields) )
+						{
+							$sql .= $sep.'`url_by_protocol`.`url_by_protocol_cache_expires` DESC';
+							$sep = "\n\t,";
+							unset($fields[0]);
+						}
+						break;
+					case 'site':
+						// site priority
+						if( in_array('site',$fields) )
+						{
+							$sql .= $sep.'`urls`.`url_site_priority` DESC';
+							$sep = "\n\t,";
+							unset($fields[1]);
+						}
+						break;
+					case 'depth':
+						// how deep within the site hierarchy the page sits
+						if( in_array('depth',$fields) )
+						{
+							$sql .= $sep.'`urls`.`url_depth` ASC';
+							$sep = "\n\t,";
+							unset($fields[2]);
+						}
+						break;
+					case 'rank':
+						// Google analytics page ranking
+						if( in_array('rank',$fields) )
+						{
+							$sql .= $sep.'`urls`.`url_ga_rank` DESC';
+							$sep = "\n\t,";
+							unset($fields[3]);
+						}
+						break;
+					case 'warmed':
+						// when we last tried to warm the cache
+						if( in_array('rank',$fields) )
+						{
+							$sql .= $sep.'`urls`.`url_ga_rank` DESC';
+							$sep = "\n\t,";
+							unset($fields[3]);
+						}
+						break;
+				}
+			}
+			if( $sql != "\nORDER BY " )
+			{
+				// Our SQL snippet has been added to so we know it has some valid
+				// ORDER BY statements. We'll update the $_order_by property
+				$this->_order_by = $sql;
+				return true;
+			}
+		}
+		return false;
+	}
+
+/**
+ * @method set_revisit_in() sets the number of seconds before a URL
+ *	   can be warmed again.
+ *
+ * @param numeric $minutes the number of minutes to be translated
+ *	  into the number of seconds
+ *
+ * @return boolean TRUE if $_revisit_in was updated. FALSE otherwise.
+ */
+	public function set_revisit_in( $minutes )
+	{
+		if( is_numeric($minutes) && $minutes > 0 && $minutes < 2881 )
+		{
+			$this->_revisit_in = ( $minutes * 60 );
+			return true;
+		}
+		return false;
+	}
+
+/**
+ * @method _validate_order_by_item() makes the ORDER BY fields more
+ *	    fault tollerant 
+ *
+ * @param string $input the text to be tested.
+ *
+ * @return string the appropriate ORDER BY field name or FALSE if
+ *	   none could be found.
+ */
+	private function _validate_order_by_item( $input )
+	{
+		$input = strtolower(trim($input));
+		switch($input)
+		{
+			case 'depth':
+			case 'level':
+				return 'depth';
+				break;
+
+			case 'cache':
+			case 'expire':
+			case 'expires':
+				return 'expires';
+				break;
+
+			case 'ga':
+			case 'analytics':
+			case 'rank':
+			case 'views':
+				return 'rank';
+				break;
+
+			case 'domain':
+			case 'domains':
+			case 'site':
+			case 'sites':
+			case 'priority':
+				return 'site';
+				break;
+
+			case 'updated':
+			case 'warm':
+			case 'warmed':
+				return 'warmed';
+				break;
+		}
+		return false;
 	}
 
 }
@@ -538,6 +716,8 @@ VALUES
 	public function check_new_urls()
 	{
 		$output = false;
+
+		// Get a list of all the URLs marked as 'new' in the database
 		$sql = '
 SELECT	 `url_id` AS `id`
 	,REVERSE(`url_url`) AS `url`
@@ -581,6 +761,7 @@ VALUES
 					$cache_sep = "\n,";
 					$url_ok = true;
 				}
+				unset($http);
 
 				// check the https version of the URL
 				$https = $this->_curl->check_url("http://{$url_list[$a]['url']}");
@@ -591,6 +772,7 @@ VALUES
 					$cache_sep = "\n,";
 					$url_ok = true;
 				}
+				unset($https);
 
 				if( $url_ok )
 				{
