@@ -21,6 +21,7 @@ $db  =  new db_mysql( array( 'host' => $db_host , 'username' => $db_user , 'pass
 $curl = new curl_get_cache();
 
 $warm = new cache_warm( $db , $curl , $instance , $batch_size );
+$warm->set_revisit_in($revisit_in);
 
 $rate = new throttle($throttle_rate);
 
