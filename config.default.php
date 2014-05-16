@@ -132,11 +132,12 @@ $priority_sites = array();
  *		'site'  -  for installs that warm multiple sites
  *			   concurrently this prioritises by site
  *			   (only relevant if you list sites above)
- *		'depth' -  how deep within a hierarchical site the
+ *		'depth'  - how deep within a hierarchical site the
  *			   page the URL points to is
  *		'expiry' - when the cache expires for that URL
- *		'rank'  -  Page rank according to Google Analytics'
+ *		'rank'   - Page rank according to Google Analytics'
  *			   pageviews in a given period
+ *		'warmed' - When the URL was last warmed
  *
  * The default order_by value is 'depth,cache'
  *
@@ -165,4 +166,21 @@ $throttle_rate = -1;
  *	 concurrently, the smaller the batch size should be.
  */
 $batch_size = 10;
+
+
+/**
+ * @var integer $revisit_in minimum number of minutes before a URL
+ *	can be warmed again
+ *
+ * NOTE: it's MINUTES not seconds, or hours (or miliseconds)
+ *
+ * NOTE: this is hear because I encountered a problem where our
+ *	 squid proxy was serving up pages who's cache has expired.
+ *	 This caused the script to hit those pages over and over
+ *	 again. Which in turn caused the squid logs to explode and
+ *	 take down the squid server. I then added throttle_rate to
+ *	 limit how quickly Squid could be hit. But didn't fix the
+ *	 problem of hitting the same cold cache pages.
+ */
+$revisit_in = 0;
 
