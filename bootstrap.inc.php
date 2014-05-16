@@ -1,9 +1,30 @@
 <?php
 
-$pwd = dirname(__FILE__).'/';
+// As this script can potentially consume all the memory resources of
+// the server, we don't want it run via a web interface.
+if( isset($_SERVER['HTTP_HOST']) ) exit;
 
-// config.default.php sets the default config values.
-require_once($pwd.'config.default.php');
+
+$root = $pwd = dirname(__FILE__).'/';
+$cls = $root.'classes/';
+
+// See config.default.php for more info on the following variables.
+$source_list = '';
+$db_host = '';
+$db_name = '';
+$db_user = '';
+$db_pass = '';
+$ga_email = '';
+$ga_password = '';
+$ga_profile_ID = '';
+$local_cache_path = '';
+$memory_limit = 50;
+$priority_sites = array();
+$order_by = 'depth,cache';
+$throttle_rate = -1;
+$batch_size = 10;
+$revisit_in = 0;
+
 
 // config.php sets the local config values
 require_once($pwd.'config.php');
@@ -26,13 +47,5 @@ require_once($cls.'db_class/db_mysql.class.php');
 // cache_warm.class.php does most of the heavy lifting or the warming
 // process
 require_once($cls.'cache_warm.class.php');
-
-// cache_downloaded.class.php provides the capacity to generate a
-// local version of the website either as backup or for CSS/Javascript
-// testing
-require_once($cls.'cache_downloaded.class.php');
-
-// config_db.php provides the database connection settings.
-require_once($pwd.'config_db.php');
 
 
