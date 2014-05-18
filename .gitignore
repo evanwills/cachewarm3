@@ -5,4 +5,4 @@ config_db.php
 config.php
 resources/*.swp
 classes/*.swp
-download*
+downloads*

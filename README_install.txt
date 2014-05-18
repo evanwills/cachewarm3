@@ -5,7 +5,7 @@ How to install Cachewarmer3
 	 classes that manage those connections have not been tested.
 	 All feed back and patches welcome.
 
-2  Copy config.default.php to config.php
+2  Rename config.default.php to config.php
 
 3  Edit the valuses of config.php to suit your environment.
 
