@@ -77,6 +77,8 @@ class curl_get_cache extends curl_get_url_simple
 			,'is_cached' => 0
 			,'expires' => null
 			,'date' => null
+			,'max-age' => 0
+			,'s-maxage' => 0
 		);
 		$this->httpobject->reset_http();
 		$this->httpobject->extract_headers( $this->get_content($url,$headers_only,true) );
@@ -88,6 +90,17 @@ class curl_get_cache extends curl_get_url_simple
 			{
 				$output['is_cached'] = 1;
 				$output['expires'] = $this->httpobject->get_header('expires');
+				$output['date'] = $this->httpobject->get_header('date');
+				$output['max-age'] = $this->httpobject->get_header('cache_max-age');
+				$output['s-maxage'] = $this->httpobject->get_header('cache_s-maxage');
+				if( $output['max-age'] === null )
+				{
+					$output['max-age'] = 0;
+				}
+				if( $output['s-maxage'] === null )
+				{
+					$output['s-maxage'] = 0;
+				}
 			}
 //			if( $headers_only === false )
 //			{
@@ -95,35 +108,6 @@ class curl_get_cache extends curl_get_url_simple
 //			}
 		}
 		return $output;
-	}
-
-	public function check_url_both( $url )
-	{
-		if( !is_string($url) )
-		{
-			// throw
-		}
-		$url = trim($url);
-		if( !$this->valid_url($url) )
-		{
-			// throw
-		}
-		$url_ = strtolower($url);
-		if( substr($url_,0,8) == 'https://' )
-		{
-			$http = substr_replace( $url , 'http' , 0 , 5 );
-			$https = $url;
-		}
-		else
-		{
-			$http = $url;
-			$https = substr_replace( $url , 'https' , 0 , 4 );
-		}
-		return array(
-			 'http' => $this->check_url($http)
-			,'https' => $this->check_url($https)
-			,'raw_url' => substr_replace( $http , '' , 0 , 7 )
-		);
 	}
 
 	public function warm_url( $url )
