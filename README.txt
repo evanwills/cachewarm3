@@ -1,12 +1,32 @@
 cachewarmer3
-Author Evan Wills
-Version 0.9
 
 Cachewarmer3 is intended to be run for websites or content management
 systems that use a proxy to cache their pages.
 
+Copyright (C) 2014 Evan Wills
+Version 0.9
 
-Why:
+-------------------------------------------------
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+-------------------------------------------------
+
+
+
+WHY USE CACHEWARMER3:
 Systems that use a proxy to cache their pages usually do so because
 there is a time overhead when generating web pages. This time over
 head can lead to a multi second delay between a user requesting a URL
@@ -17,16 +37,17 @@ in stored and if the cache for that page has expired yet. If the
 cache hasn't expired, the proxy server just sends out the page. If
 the cache has expired the proxy requests a new copy of the cache.
 
-On large sites, it's not unusual for some pages to go cold. That is,
-for the copy stored in the proxy to be out of date. Thus, despite the
-proxy, it takes many seconds for the page to be served to the user.
+On large sites, it's not unusual for some pages' cache to go cold.
+That is, for the copy stored in the proxy to be out of date. Thus,
+despite the proxy, it can take many seconds for the page to be served
+to the user.
 
 The purpose of this script is to download pages as their cache
 expires (before a user requests it) so that when a user requests the
 page there is always a warm copy of the cache in the proxy.
 
 
-How:
+HOW DOES CACHEWARMER3 WORK:
 It is assumed that the cachewarmer is run automatically by a server.
 It has a number of parts that work independantly but together:
 
@@ -45,14 +66,14 @@ It has a number of parts that work independantly but together:
 	more instances can be run, it terminates.
 	(run every minute)
 
-NOTE:  for the CMS this was written for, one instance was not enough
+  NOTE: for the CMS this was written for, one instance was not enough
 	to warm all the URLs whose cache has expired. We needed 25
 	instances running concurrently. But we didn't have a server
 	that could run that many instances so I implemented a couple
 	of levels of prioritisation.
 
 
-Prioritisation:
+PRIORITISATION:
 
 If you have a site with too many URLs to warm in the time given for
 the cache to expire, you need a way of prioritising which URLs get
@@ -85,7 +106,7 @@ it runs on can handle). This gets to about 30% of all the URLs that
 need to be warmed in a given period.
 
 
-Benifits:
+BENIFITS:
 
 There are two benifits to this script: Cache works as it should. And
 pages load fast because pages are always in the cache. Our page load
@@ -93,7 +114,7 @@ time went from between 3 and 10 seconds to load a page to around 0.1
 seconds per page.
 
 
-Drawbacks:
+DRAWBACKS:
 
 Depending on how many URLs you have and how quickly the cache expires
 for those URLs relative to how much grunt the server you hoste
@@ -112,9 +133,21 @@ cachewarm_auto-restart.cron.sh sometime in the next minute.
 By default, Cachewarmer3's memory limit is 50MB. It probably shouldn't
 be set lower than 30MB. Otherwise it may it may exit too soon.
 
-The othe major issue is that if your CMS logs every hit and you have
-a lot of pages, you may need to increase the space alocated to server
-logs. (We had to do this for our CMS)
+There are two othe major issue:
+- If your CMS logs every hit and you have a lot of pages, you may
+  need to increase the space alocated to server logs.
+  (We had to do this for our CMS)
+- If your proxy server isn't configured to have enough memory/storage
+  to accommodate a fully cached site, you could take down the proxy
+  server. This is not a fault with this script. The problem may
+  occure if a search engine crawls your site or you.
+  NOTE: If you proxy server was is up properly, this will not be a
+	problem. 
+
+When using this script for the first time, notify your server admin
+and ask him/her to monitor activity on the proxy server for a day or
+so it may be that you need to tweak the throttle rate, the memory
+limit or a couple of other configuration items (see config.php)
 
 
 What's left to do:
@@ -122,4 +155,7 @@ What's left to do:
 1 Managing URLs that are deemed to be bad / unreachable
 
 2 Better reporting/logging of what's going on.
+
+3 Getting Google Analytics data into the database.
+  (The code is written but untested.)
 
