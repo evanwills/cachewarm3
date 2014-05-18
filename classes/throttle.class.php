@@ -11,12 +11,11 @@ class throttle
 
 	public function __construct( $rate )
 	{
-		debug($rate);sleep(1);
 		if( is_numeric($rate) && $rate > 0 )
 		{
 			$this->_throttle_rate = ( 1 / $rate );
 			$this->_throttle_method = '_do_throttle';
-			$this->_throttle_time = microtime(true);debug($this);
+			$this->_throttle_time = microtime(true);
 		}
 	}
 
