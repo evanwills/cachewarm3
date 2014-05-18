@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `urls` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `urls`
+-- Table structure for table `_url_status`
 --
 
 DROP TABLE IF EXISTS `_url_status`;
@@ -59,11 +59,13 @@ CREATE TABLE IF NOT EXISTS `_url_status` (
   `url_status_id` tinyint(3) unsigned NOT NULL AUTO_INCREMENT,
   `url_status_name` varchar(8) NOT NULL COMMENT 'The status of the URL (e.g. "new", "good", "delete")',
   PRIMARY KEY				(`url_status_id`),
-  UNIQUE KEY `IND_url_status_name`	(`url_status_name`)
+  UNIQUE KEY `UNI_url_status_name`	(`url_status_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Normalised table for URL statuses';
 
 INSERT INTO `cachewarmer3`.`_url_status` ( `url_status_id` , `url_status_name` )
 VALUES ( 1 , 'new' ) , ( 2 , 'good' ) , ( 3 , 'stale') , ( 4 , 'bad' ) , ( 5 , 'delete');
+
+
 -- --------------------------------------------------------
 
 --
@@ -77,9 +79,6 @@ CREATE TABLE IF NOT EXISTS `url_by_protocol` (
   `url_by_protocol_ok` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Whether or not the URL works for this url_by_protocol',
   `url_by_protocol_is_cached` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Whether or not the URL for this url_by_protocol is cached',
   `url_by_protocol_cache_expires` datetime DEFAULT NULL COMMENT 'Cache expiry time for the URL for this url_by_protocol',
-  `url_by_protocol_cache_max-age` int(10) DEFAULT NULL COMMENT 'Cache browser max age in seconds',
-  `url_by_protocol_cache_s-maxage` int(10) DEFAULT NULL COMMENT 'Cache server max age in seconds',
-  `url_by_protocol_cache_correct` int(10) DEFAULT NULL COMMENT 'The number of second by which the cache needs to be corrected',
   `url_by_protocol_last_updated` TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'when this entry was last modified',
   UNIQUE KEY `UNI_url_by_protocol_url_id__url_by_protocol_https` (`url_by_protocol__url_id`,`url_by_protocol_https`),
   KEY `IND_protocol_url_id`			(`url_by_protocol__url_id`),
