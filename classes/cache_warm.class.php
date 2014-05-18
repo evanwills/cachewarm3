@@ -36,6 +36,8 @@ ORDER BY `urls`.`url_site_priority` ASC
 	,`urls`.`url_depth` ASC
 	,`url_by_protocol`.`url_by_protocol_cache_expires` ASC';
 
+
+
 /**
  * @method __construct()
  *
@@ -226,17 +228,10 @@ LIMIT 0,1';
 			// throw
 			return false;
 		}
-		$url_info['now    '] = gmdate('Y-m-d H:i:s');
-		$url_info['n__time'] = strtotime(gmdate('Y-m-d H:i:s'));
-		$url_info['e__time'] = strtotime($url_info['expires']);
-		$url_info['t__diff'] = round( ( $url_info['n__time'] - $url_info['e__time'] ) / 3600 , 2 ).' hours' ;
-
 
 		// try downloading the contents of the URL
-		$downloaded = $this->_curl->check_url( $url_info['url'] , false );debug($url_info,$downloaded);
-		$writer = fopen('log/urls_and_cache-times.txt','a+');
-		fwrite($writer,"\n{$url_info['url']}\t".date('Y-m-d H:i:s',$downloaded['expires'])."\t{$url_info['now    ']}");
-		fclose($writer);
+		$downloaded = $this->_curl->check_url( $url_info['url'] , false );
+		
 		$status = 'good';
 		if( $downloaded['is_valid'] )
 		{
@@ -280,7 +275,9 @@ SET	 `urls`.`url__url_status_id` = ".$this->_db->get_cached_id($status,'_url_sta
 	
 		if( $downloaded['expires'] !== null )
 		{
-			$sql .= "\n\t,`url_by_protocol_cache_expires` = '".$this->_db->escape(date('Y-m-d H:i:s',$downloaded['expires']))."'";
+			$sql .=  "\n\t,`url_by_protocol_cache_expires` = '"
+				.$this->_correct_cache_expires($downloaded)
+				."'";
 		}
 		$sql .= "
 WHERE	`urls`.`url_id` = {$url_info['id']}
@@ -470,6 +467,7 @@ AND	`url_by_protocol`.`url_by_protocol_https` = {$url_info['https']}";
 		return false;
 	}
 
+
 /**
  * @method _validate_order_by_item() makes the ORDER BY fields more
  *	    fault tollerant 
@@ -517,6 +515,37 @@ AND	`url_by_protocol`.`url_by_protocol_https` = {$url_info['https']}";
 				break;
 		}
 		return false;
+	}
+
+/**
+ * @method _correct_cache_expires() adjests the cache expiry based on
+ *	   the difference between the s-maxage and max-age provided
+ *	   in the headers
+ *
+ * @param array $downloaded an associative array of selected headers
+ *	  provided by curl_get_cache::check_url()
+ *
+ * @return string date/time string for the adjusted cache expiry time
+ */
+	protected function _correct_cache_expires( $downloaded )
+	{
+		if( $downloaded['s-maxage']  != 0 && $downloaded['max-age'] != 0 )
+		{
+			return $this->_db->escape(
+				gmdate(
+					 'Y-m-d H:i:s'
+					,(
+						$downloaded['expires']
+						+
+						( $downloaded['s-maxage'] - $downloaded['max-age'] )
+					 )
+				)
+			);
+		}
+		else
+		{
+			return $this->_db->escape( gmdate( 'Y-m-d H:i:s' , strtotime($downloaded['expires']) ) );
+		}
 	}
 
 }
@@ -757,7 +786,7 @@ VALUES
 				if( $http['is_valid'] == 1 )
 				{
 					$b += 1;
-					$cache_sql .= "$cache_sep( {$url_list[$a]['id']} , 0 , {$http['is_valid']} , {$http['is_cached']} , '{$http['date']}' )";
+					$cache_sql .= "$cache_sep( {$url_list[$a]['id']} , 0 , {$http['is_valid']} , {$http['is_cached']} , '".$this->_correct_cache_expires($http)."' )";
 					$cache_sep = "\n,";
 					$url_ok = true;
 				}
@@ -768,7 +797,7 @@ VALUES
 				if( $https['is_valid'] == 1 )
 				{
 					$b += 1;
-					$cache_sql .= "$cache_sep( {$url_list[$a]['id']} , 1 , {$https['is_valid']} , {$https['is_cached']} , '{$https['date']}' )";
+					$cache_sql .= "$cache_sep( {$url_list[$a]['id']} , 1 , {$https['is_valid']} , {$https['is_cached']} , '".$this->_correct_cache_expires($https)."' )";
 					$cache_sep = "\n,";
 					$url_ok = true;
 				}
