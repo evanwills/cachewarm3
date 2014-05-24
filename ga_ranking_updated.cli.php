@@ -1,5 +1,9 @@
 <?php
 
+echo "\n\n\nThis has not been tested yet!!!\n\nIf you want to help with testing, please send\nfeedback to evan.wills@acu.edu.au and remove\nthe 'exit' command on line 5 of\n\tga_ranking_updated.cli.php\n\n\n\n";
+
+exit;
+
 require_once('bootstrap.inc.php');
 
 // gapi.class.php manages extracting analytics data out of Google
