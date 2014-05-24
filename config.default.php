@@ -1,8 +1,20 @@
 <?php
 
 /**
- * @ver string $source_list URL for page listing all the URLs whose
- *	cache should be added to the database
+ * @ver string $source_list URL for page listing all the URLs to be
+ *	added to the database, whose cache should be warmed.
+ *
+ * NOTE: The page downloaded should contain only a list of URLs:
+ *	 1 URL per line.
+ *	 white space before and after the URL will be removed.
+ *
+ * NOTE ALSO: As each URL is processed, it's headers are retrieved
+ *	  for both HTTP and HTTPS protocols.
+ *	- Invalid and/or inaccessible URLs (for either HTTP or HTTPS)
+ *	  will be entered into the DB but will be marked as invalid
+ *	  and thus ignored when warming.
+ *	- URLs (for either HTTP or HTTPS) that are not cached will be
+ *	  marked accordingly and no attempt will be made to warm them.
  */
 $source_list = '';
 
@@ -38,53 +50,7 @@ $db_pass = 'DATABASE PASSWORD';
 
 // END: Database credentials
 // ==================================================================
-// START: Google Analytics credentials
-
-/**
- * @var string $ga_email the email address for an account that has
- *	access to the Google Analytics for the sites whose cache is
- *	to be warmed
- */
-$ga_email = '';
-
-/**
- * @var string $ga_password the password for the account defined by
- *	$ga_email
- */
-$ga_password = '';
-
-/**
- * @var string $ga_profile_id the Google Analytics ID for the profile
- *	from which you want to extract the analytics
- */
-$ga_profile_ID = '';
-
-// END: Google Analytics credentials
-// ==================================================================
-
-/**
- * @var string $local_cache_path absolute path to where the local
- *	cache sould be stored 
- */
-$local_cache_path = '';
-
-
-/**
- * @var integer $memory_limit the number of Mega Bytes the script can
- *	use before it should exit.
- */
-$memory_limit = 50;
-
-/**
- * @var string $root absolute path to the cachewarm3 directory
- */
-$root = dirname(__FILE__).'/';
-
-
-/**
- * @var string $cls absolute path to the classes directory.
- */
-$cls = $root.'classes/';
+// START: Warming priorities
 
 
 /**
@@ -147,16 +113,20 @@ $priority_sites = array();
 $order_by = 'depth,cache';
 
 
-/**
- * @var numeric $throttle_rate the maximum number of URLs that can be
- *	warmed per second.
- *
- * NOTE: a throttle rate of less than 1 is converted to seconds per
- *	 URL e.g. a throttle_rate of 0.2 = 1 url every 5 seconds.
- *	 A throttle rate of less than zero means no throttling.
- */
-$throttle_rate = -1;
+// END: Warming priorities
+// ==================================================================
+// START: Memory management
 
+
+/**
+ * @var integer $memory_limit the number of Mega Bytes the script can
+ *	use before it should exit.
+ *
+ * NOTE: The more instances of cachewarmer3.cli.php you are running
+ *	 concurrently, the lower the $memory_limit needs to be to
+ *	 ensure it doesn't consume all the server's resources.
+ */
+$memory_limit = 50;
 
 /**
  * @var integer $batch_size the number of URLs to be processes in a
@@ -166,6 +136,24 @@ $throttle_rate = -1;
  *	 concurrently, the smaller the batch size should be.
  */
 $batch_size = 10;
+
+
+// END: Memory management
+// ==================================================================
+// START: Proxy server care
+
+
+/**
+ * @var numeric $throttle_rate the maximum number of URLs that can be
+ *	warmed per second.
+ *
+ * NOTE: a throttle rate of less than 1 is converted to seconds per
+ *	 URL e.g. a $throttle_rate of 0.2 = 1 URL every 5 seconds.
+ *		  a $throttle_rate of 2 = 1 URL every half a second
+ *		  or two URLs per second
+ *	 A $throttle_rate of zero or less means no throttling.
+ */
+$throttle_rate = -1;
 
 
 /**
@@ -183,4 +171,55 @@ $batch_size = 10;
  *	 problem of hitting the same cold cache pages.
  */
 $revisit_in = 0;
+
+
+// END: Proxy server care
+// ==================================================================
+// START: Google Analytics credentials
+
+// All the code for GA stuff has been written but not tested!
+
+/**
+ * @var string $ga_email the email address for an account that has
+ *	access to the Google Analytics for the sites whose cache is
+ *	to be warmed
+ */
+$ga_email = '';
+
+/**
+ * @var string $ga_password the password for the account defined by
+ *	$ga_email
+ */
+$ga_password = '';
+
+/**
+ * @var string $ga_profile_id the Google Analytics ID for the profile
+ *	from which you want to extract the analytics
+ */
+$ga_profile_ID = '';
+
+
+// END: Google Analytics credentials
+// =================================================================
+
+
+/**
+ * @var string $root absolute path to the cachewarm3 directory
+ */
+$root = dirname(__FILE__).'/';
+
+
+/**
+ * @var string $cls absolute path to the classes directory.
+ */
+$cls = $root.'classes/';
+
+
+/**
+ * @var string $local_cache_path absolute path to where the local
+ *	cache sould be stored
+ *
+ * NOTE: this is currently not working
+ */
+$local_cache_path = '';
 
