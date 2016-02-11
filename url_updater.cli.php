@@ -9,5 +9,5 @@ $warmer = new cache_warm_check_urls( $db , $curl );
 
 // $source_list is defined in config.php which is called from 
 // bootstrap.inc.php
-$warmer->update_url_list( $source_list , $priority_sites );
+$warmer->update_url_list( $source_list , $priority_sites , $use_local_file );
 $warmer->check_new_urls();
