@@ -231,7 +231,7 @@ LIMIT 0,1';
 
 		// try downloading the contents of the URL
 		$downloaded = $this->_curl->check_url( $url_info['url'] , false );
-		
+
 		$status = 'good';
 		if( $downloaded['is_valid'] )
 		{
@@ -272,7 +272,7 @@ SET	 `urls`.`url__url_status_id` = ".$this->_db->get_cached_id($status,'_url_sta
 	,`url_by_protocol_ok` = {$downloaded['is_valid']}
 	,`url_by_protocol_is_cached` = {$downloaded['is_cached']}
 	,`url_by_protocol_last_updated` = '".$this->_db->escape(date('Y-m-d H:i:s'))."'";
-	
+
 		if( $downloaded['expires'] !== null )
 		{
 			$sql .=  "\n\t,`url_by_protocol_cache_expires` = '"
@@ -470,7 +470,7 @@ AND	`url_by_protocol`.`url_by_protocol_https` = {$url_info['https']}";
 
 /**
  * @method _validate_order_by_item() makes the ORDER BY fields more
- *	    fault tollerant 
+ *	    fault tollerant
  *
  * @param string $input the text to be tested.
  *
@@ -561,24 +561,41 @@ class cache_warm_check_urls extends cache_warm
  * @param string $source_url the URL for the page listing URLs.
  *
  * @param array $priority_sites list of sites (listed from most
- *	  important to least important) by which to prioritise
- *	  warming order. This is primarily for when you don't have
- *	  enough resources on the this side to warm all URLs before
- *	  their cache expires.
+ *		important to least important) by which to prioritise
+ *		warming order. This is primarily for when you don't have
+ *		enough resources on the this side to warm all URLs before
+ *		their cache expires.
+ *
+ * @param bool $use_local_file specifies whether the $source_url
+ *		is a file in the local file system or an actual URL to be
+ *		downloaded
  *
  * @return boolean TRUE if any URLs were added or updated.
  *	   FALSE otherwise
  */
-	public function update_url_list( $source_url , $priority_sites = array() )
+	public function update_url_list( $source_url , $priority_sites = array() , $use_local_file = false )
 	{
-		if( !$this->_curl->valid_url($source_url) )
+		if( $use_local_file !== true )
 		{
-			// throw
-			return false;
-		}
+			if( !$this->_curl->valid_url($source_url) )
+			{
+				// throw
+				return false;
+			}
 
-		// get the URLs and put them into an array.
-		$url_list = explode("\n",$this->_curl->get_content($source_url));
+			// get the URLs and put them into an array.
+			$url_list = $this->_curl->get_content($source_url);
+		}
+		else
+		{
+			if( !is_file($source_url) )
+			{
+				// throw
+				return false;
+			}
+			$url_list = file_get_contents($source_url);
+		}
+		$url_list = explode( "\n" , $url_list );
 
 		// make the list of priority_sites more usable by this method
 		$priority_sites = $this->_make_priority_sites_usable( $priority_sites );
@@ -596,7 +613,7 @@ class cache_warm_check_urls extends cache_warm
 			$url_bits = $this->_curl->get_url_parts($url_list[$a]);
 			if( $url_bits != false )
 			{
-				$url = $url_bits['domain'].$url_bits['path'].$url_bits['file'];
+				$url = $url_bits['domain'].$url_bits['path'].isset($url_bits['file'])?$url_bits['file']:'';
 
 				// strip the protocol and leading slashes (it's redundant data in the DB)
 				if( $url_bits['protocol'] == 'https' )
@@ -634,7 +651,7 @@ class cache_warm_check_urls extends cache_warm
 				// is likely to be consistant across a large number of URLs
 				// then having to search the domain needlessly adds time to
 				// the search where as the reversed URL is much more random
-				// and so the search will progress quicker 
+				// and so the search will progress quicker
 				$e_lru = $this->_db->escape(strrev($url_list[$a]));
 
 				// to further help improve search speed we add the last two
@@ -740,7 +757,7 @@ VALUES
  *	   and grabs their headers to see if the URLs is good, if the
  *	   page is cached and, if so, when the cache expires
  *
- * @return $output TRUE if there were new URLs to check. False otherrwise 
+ * @return $output TRUE if there were new URLs to check. False otherrwise
  */
 	public function check_new_urls()
 	{
@@ -868,7 +885,7 @@ VALUES
 			$start = 0;
 		}
 
-		
+
 		$sql = '
 SELECT 	 DISTINCT `urls`.`url_id` AS `id`
 	,REVERSE(`urls`.`url_url`) AS `url`
@@ -877,7 +894,7 @@ FROM	 `urls`
 WHERE	`urls`.`url_id` = `url_by_protocol`.`url_by_protocol__url_id`
 AND	`url_by_protocol`.`url_by_protocol_ok` = 1
 AND	`url_by_protocol`.`url_by_protocol_is_cached` = 0';
-		
+
 		$url_list = $this->_db->fetch_($sql);
 		if( $url_list != null )
 		{
@@ -952,7 +969,7 @@ class cache_warm_ga_stats extends cache_warm
 	{
 		if( is_int($batch_size) && $batch_size > 0 )
 		{
-			$this->_batch_size = $batch_size;	
+			$this->_batch_size = $batch_size;
 			return true;
 		}
 		return false;
@@ -1216,7 +1233,7 @@ class cache_warm_ga_stats extends cache_warm
  *
  * @param string $to the end date to calculate the rankings
  *
- * @param integer $start the 
+ * @param integer $start the
  */
 	private function _get_ga_report_data( $from , $to , $start , $distant_recent )
 	{
