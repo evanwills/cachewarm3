@@ -18,6 +18,25 @@
  */
 $source_list = '';
 
+/**
+ * @var bool $use_local_file whether or not to use a local file as
+ *		the source URL list
+ *
+ * NOTE: It is possible, that you have so many pages to warm, your
+ *		 CMS cannot generate a single list of URL and so you
+ *		 generate the list of URLs some other way (like using
+ *		 url_list_builder.sh) and store that list of URLs locally.
+ *		 This allows you to explicitly specify that.
+ */
+$use_local_file = false;
+
+/**
+ * @var string $parent_source_list URL for page listing all the URL
+ *		listing pages that make up the actual source_list.
+ *
+ * This is used by url_list_builder.sh
+ */
+$parent_source_list = '';
 
 // ==================================================================
 // START: Database credentials
@@ -82,7 +101,7 @@ $db_pass = 'DATABASE PASSWORD';
  *	)
  *
  * URLs under 'www.domain.net/lower_priority' have a lower priority
- * than others under 'www.domain.net'. URLs whos sites are not listed
+ * than others under 'www.domain.net'. URLs whose sites are not listed
  * in the priority list, all have the same value (in this case 4).
  *	'my.domain.net' has priority 0 and
  *	'www.domain.net/lower_priority' has priority 3
